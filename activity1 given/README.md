@@ -4,7 +4,7 @@ The initial Performer code only has one function for adding strings to an array.
 
 The Operations to Implement:
 - Add: Adds a new string to the list of strings.
-- Display: Displays the string at the specified index in the list.
+- Display: Displays the list of strings.
 - Count: Returns the number of strings in the list.
 
 ## Protocol
@@ -13,7 +13,7 @@ The Operations to Implement:
 General Request Format:
 ```
 { 
-   "selected": <int: 1=add, 3=display, 4=count,  0=quit>, 
+   "selected": <int: 1=add, 2=display, 3=count,  0=quit>, 
    "data": <thing to send>
 }
 ```
@@ -21,7 +21,7 @@ Fields:
  - selected <int>: The operation selected.
  - data <Depends on the operation>:
    - add <String>: The string to be added.
-   - display <None>: Display List
+   - display <None>: None.
    - count <None>: None.
    - quit <None>: None.
 
@@ -38,7 +38,7 @@ Fields:
  - type <String>: Echoes original operation selected from request.
  - data <Depends on the operation>: The result returned by the server.
    - Add <String>: Returns the new list 
-   - Display <String>: String from list at specified index
+   - Display <String>: List of strings
    - Count <int>: Number of elements (Strings) in the list
  
 General Error Response: 
@@ -53,10 +53,10 @@ General Error Response:
 ### Terminal
 Base Code, please use the following commands:
 ```
-    For Server, run "gradle runServer -Pport=9099 -q --console=plain"
+    For Server, run "gradle runServer -Pport=8080 -q --console=plain"
 ```
 ```   
-    For Client, run "gradle runClient -Phost=localhost -Pport=9099 -q --console=plain"
+    For Client, run "gradle runClient -Phost=localhost -Pport=8080 -q --console=plain"
 ```   
 
 

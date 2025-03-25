@@ -20,7 +20,7 @@ task runServer(type: JavaExec) {
   main = 'taskone.Server'
   standardInput = System.in
   
-  // run with arguments e.g.: gradle runServer -Pport=9099 -q --console=plain
+  // run with arguments e.g.: gradle runServer -Pport=8080 -q --console=plain
   if (project.hasProperty('port')) {
     args(project.getProperty('port'));
   }
@@ -36,7 +36,7 @@ task runClient(type: JavaExec) {
   main = 'taskone.Client'
   standardInput = System.in
   
-  // run with arguments e.g.: gradle runClient -Phost=localhost -Pport=9099 -q --console=plain
+  // run with arguments e.g.: gradle runClient -Phost=localhost -Pport=8080 -q --console=plain
   if (project.hasProperty("host") && project.hasProperty('port')) {
     args(project.getProperty('host'), project.getProperty('port'));
   }
