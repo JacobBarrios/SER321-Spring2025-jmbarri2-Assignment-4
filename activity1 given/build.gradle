@@ -42,3 +42,18 @@ task runClient(type: JavaExec) {
   }
 }
 
+task runThreadedServer(type: JavaExec) {
+  group 'server'
+  description 'Creates a threaded server that can receive and send protocols to multiple clients'
+
+  classpath = sourceSets.main.runtimeClasspath
+  standardInput = System.in
+
+  main = 'taskone.ThreadedServer'
+
+  // run with arguments e.g.: gradle runServer -Pport=8080 -q --console=plain
+  if (project.hasProperty('port')) {
+    args(project.getProperty('port'));
+  }
+}
+
