@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Base64;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -89,8 +90,8 @@ public class Client {
         stdin = new BufferedReader(new InputStreamReader(System.in));
         try {
             if (args.length != 2) {
-                // gradle runClient -Phost=localhost -Pport=9099 -q --console=plain
-                System.out.println("Usage: gradle Client -Phost=localhost -Pport=9099");
+                // gradle runClient -Phost=localhost -Pport=8080 -q --console=plain
+                System.out.println("Usage: gradle runClient -Phost=localhost -Pport=8080");
                 System.exit(0);
             }
 
@@ -107,7 +108,7 @@ public class Client {
             OutputStream out = sock.getOutputStream();
             InputStream in = sock.getInputStream();
             Scanner input = new Scanner(System.in);
-            int choice;
+            int choice = -1;
             do {
                 System.out.println();
                 System.out.println("Client Menu");
@@ -117,7 +118,12 @@ public class Client {
                 System.out.println("3. count - returns the elements in the list");
                 System.out.println("0. quit");
                 System.out.println();
-                choice = input.nextInt(); // what if not int.. should error handle this
+                try {
+                    choice = input.nextInt(); // what if not int... should error handle this
+                }
+                catch(InputMismatchException e) {
+                    input.nextLine();
+                }
                 JSONObject request = null;
                 switch (choice) {
                     case (1):
@@ -134,7 +140,6 @@ public class Client {
                         break;
                     default:
                         System.out.println("Please select a valid option (0-6).");
-                        break;
                 }
                 if (request != null) {
                     System.out.println(request);
@@ -148,9 +153,18 @@ public class Client {
                         System.out.println();
                         System.out.println("The response from the server: ");
                         System.out.println("datatype: " + response.getString("type"));
-                        System.out.println("data: " + response.getString("data"));
+                        String typeStr = response.getString("type");
+                        if (response.has("data")) {
+                            Object data = response.get("data"); // Get the value as an Object
+                            
+                            if(data instanceof Integer) {
+                                System.out.println("data: " + data);
+                            }
+                            else if(data instanceof String) {
+                                System.out.println("data: " + data);
+                            }
+                        }
                         System.out.println();
-                        String typeStr = (String) response.getString("type");
                         if (typeStr.equals("quit")) {
                             sock.close();
                             out.close();

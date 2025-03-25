@@ -25,18 +25,17 @@ class Server {
     static Socket conn;
     static Performer performer;
 
-
     public static void main(String[] args) throws Exception {
-        int port;
+        int port = 0;
         StringList strings = new StringList();
         performer = new Performer(strings);
 
         if (args.length != 1) {
-            // gradle runServer -Pport=9099 -q --console=plain
-            System.out.println("Usage: gradle runServer -Pport=9099 -q --console=plain");
+            // gradle runServer -Pport=8080 -q --console=plain
+            System.out.println("Usage: gradle runServer -Pport=8080 -q --console=plain");
             System.exit(1);
         }
-        port = -1;
+        
         try {
             port = Integer.parseInt(args[0]);
         } catch (NumberFormatException nfe) {
@@ -64,13 +63,23 @@ class Server {
             while (!quit) {
                 byte[] messageBytes = NetworkUtils.receive(in);
                 JSONObject message = JsonUtils.fromByteArray(messageBytes);
-                JSONObject returnMessage = new JSONObject();
+                JSONObject returnMessage;
 
                 int choice = message.getInt("selected");
                 switch (choice) {
                     case (1):
                         String inStr = (String) message.get("data");
                         returnMessage = performer.add(inStr);
+                        break;
+                    case (2):
+                        returnMessage = performer.display();
+                        break;
+                    case (3):
+                        returnMessage = performer.count();
+                        break;
+                    case (0):
+                        returnMessage = performer.quit();
+                        quit = true;
                         break;
                     default:
                         returnMessage = performer.error("Invalid selection: " + choice
