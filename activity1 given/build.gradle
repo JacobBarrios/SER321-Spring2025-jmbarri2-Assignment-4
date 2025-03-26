@@ -22,12 +22,13 @@ task runClient(type: JavaExec) {
   standardInput = System.in
 
   // run with arguments e.g.: gradle runClient -Phost=localhost -Pport=8080 -q --console=plain
-  if (project.hasProperty("host") && project.hasProperty('port')) {
-    args(project.getProperty('host'), project.getProperty('port'));
-  }
+  def host = project.hasProperty("host") ? project.getProperty('host') : 'localhost'
+  def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
+
+  args(host, port)
 }
 
-task runServer(type: JavaExec) {
+task runTask1(type: JavaExec) {
   group 'server'
   description 'Creates Server socket waits for messages'
 
@@ -37,14 +38,14 @@ task runServer(type: JavaExec) {
   standardInput = System.in
   
   // run with arguments e.g.: gradle runServer -Pport=8080 -q --console=plain
-  if (project.hasProperty('port')) {
-    args(project.getProperty('port'));
-  }
+  def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
+
+  args(port)
 }
 
-task runThreadedServer(type: JavaExec) {
+task runTask2(type: JavaExec) {
   group 'server'
-  description 'Creates a threaded server that can receive and send protocols to/from multiple clients'
+  description 'Creates a threaded server that can receive and send protocols to and from multiple clients'
 
   classpath = sourceSets.main.runtimeClasspath
   standardInput = System.in
@@ -52,8 +53,24 @@ task runThreadedServer(type: JavaExec) {
   main = 'taskone.ThreadedServer'
 
   // run with arguments e.g.: gradle runThreadedServer -Pport=8080 -q --console=plain
-  if (project.hasProperty('port')) {
-    args(project.getProperty('port'));
-  }
+  def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
+
+  args(port)
+}
+
+task runTask3(type: JavaExec) {
+  group 'server'
+  description 'Creates a threaded server that can receive and send protocols to and from a specified number ' +
+          'of clients'
+
+  classpath = sourceSets.main.runtimeClasspath
+  standardInput = System.in
+
+  main = 'taskone.ThreadedPoolServer'
+
+  // run with arguments e.g.: gradle runThreadedServer -Pport=8080 -q --console=plain
+  def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
+
+  args(port)
 }
 
