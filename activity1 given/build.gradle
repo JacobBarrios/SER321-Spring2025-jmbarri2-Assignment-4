@@ -37,7 +37,7 @@ task runTask1(type: JavaExec) {
   main = 'taskone.Server'
   standardInput = System.in
   
-  // run with arguments e.g.: gradle runServer -Pport=8080 -q --console=plain
+  // run with arguments e.g.: gradle runTask1 -Pport=8080 -q --console=plain
   def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
 
   args(port)
@@ -45,14 +45,14 @@ task runTask1(type: JavaExec) {
 
 task runTask2(type: JavaExec) {
   group 'server'
-  description 'Creates a threaded server that can receive and send protocols to and from multiple clients'
+  description 'Creates a threaded server that can communicate with multiple clients'
 
   classpath = sourceSets.main.runtimeClasspath
   standardInput = System.in
 
   main = 'taskone.ThreadedServer'
 
-  // run with arguments e.g.: gradle runThreadedServer -Pport=8080 -q --console=plain
+  // run with arguments e.g.: gradle runTask2 -Pport=8080 -q --console=plain
   def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
 
   args(port)
@@ -60,17 +60,18 @@ task runTask2(type: JavaExec) {
 
 task runTask3(type: JavaExec) {
   group 'server'
-  description 'Creates a threaded server that can receive and send protocols to and from a specified number ' +
+  description 'Creates a threaded server that can communicate with a specified number ' +
           'of clients'
 
   classpath = sourceSets.main.runtimeClasspath
   standardInput = System.in
 
-  main = 'taskone.ThreadedPoolServer'
+  main = 'taskone.ThreadPoolServer'
 
-  // run with arguments e.g.: gradle runThreadedServer -Pport=8080 -q --console=plain
+  // run with arguments e.g.: gradle runTask3 -Pport=8080 -Pusers -q --console=plain
   def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
+  def users = project.hasProperty('users') ? project.getProperty('users') : 5
 
-  args(port)
+  args(port, users)
 }
 

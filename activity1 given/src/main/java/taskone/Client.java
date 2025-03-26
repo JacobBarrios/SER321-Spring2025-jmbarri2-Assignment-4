@@ -103,16 +103,31 @@ public class Client {
                 System.out.println("[Port] must be an integer");
                 System.exit(2);
             }
-
+            System.out.println("Waiting for connection...");
             sock = new Socket(host, port);
             OutputStream out = sock.getOutputStream();
             InputStream in = sock.getInputStream();
             Scanner input = new Scanner(System.in);
+            
+            System.out.println("Receiving server start/cancel");
+            byte[] startCancelBytes = NetworkUtils.receive(in);
+            JSONObject startCancel = JsonUtils.fromByteArray(startCancelBytes);
+            if(startCancel.getString("type").equals("cancel")) {
+                System.out.println("Too many connections at " + host + " in port " + port);
+                
+                JSONObject quit = quit();
+                NetworkUtils.send(out, JsonUtils.toByteArray(quit));
+                sock.close();
+                out.close();
+                in.close();
+                System.exit(0);
+            }
+            
             int choice = -1;
             do {
                 System.out.println();
                 System.out.println("Client Menu");
-                System.out.println("Please select a valid option (1-5). 0 to diconnect the client");
+                System.out.println("Please select a valid option (1-5). 0 to disconnect the client");
                 System.out.println("1. add <string> - adds a string to the list and display it");
                 System.out.println("2. display - display the list");
                 System.out.println("3. count - returns the elements in the list");
@@ -144,6 +159,8 @@ public class Client {
                 if (request != null) {
                     System.out.println(request);
                     NetworkUtils.send(out, JsonUtils.toByteArray(request));
+                    
+                    System.out.println("Receiving server request");
                     byte[] responseBytes = NetworkUtils.receive(in);
                     JSONObject response = JsonUtils.fromByteArray(responseBytes);
 

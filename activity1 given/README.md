@@ -53,7 +53,9 @@ General Error Response:
 ### Terminal
 Base Code, please use the following commands:
 ```
-    For Server, run "gradle runServer -Pport=8080 -q --console=plain"
+    For Server, run "gradle runTask1 -Pport=8080 -q --console=plain"
+    For Threaded Server, run "gradle runTask2 -Pport=8080 -q --console=plain"
+    For Threaded Pool Server, run "gradle runTask3 -Pport=8080 -q --console=plain"
 ```
 ```   
     For Client, run "gradle runClient -Phost=localhost -Pport=8080 -q --console=plain"

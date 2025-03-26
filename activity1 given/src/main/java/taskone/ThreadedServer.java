@@ -45,7 +45,6 @@ class ThreadedServer {
 		ServerSocket server = new ServerSocket(port);
 		System.out.println("Server Started...");
 		while (true) {
-			System.out.println("Accepting a Request...");
 			conn = server.accept();
 			ThreadHandler newThreadHandler = new ThreadHandler(performer, conn);
 			
@@ -80,6 +79,7 @@ class ThreadHandler extends Thread {
 			in = conn.getInputStream();
 			System.out.println("Server connected to client:");
 			while (!quit) {
+				System.out.println("Accepting a Request...");
 				byte[] messageBytes = NetworkUtils.receive(in);
 				JSONObject message = JsonUtils.fromByteArray(messageBytes);
 				JSONObject returnMessage;
