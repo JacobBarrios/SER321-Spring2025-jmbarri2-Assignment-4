@@ -25,8 +25,8 @@ class ThreadPoolServer {
 	static Socket conn;
 	static Performer performer;
 	static int maxUsers;
-	static int totalUsers;
-	static boolean createConnection;
+	static int totalUsers = 0;
+	static boolean createConnection = true;
 	
 	public static void main(String[] args) throws Exception {
 		int port = 0;

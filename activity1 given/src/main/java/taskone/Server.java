@@ -60,6 +60,12 @@ class Server {
             out = conn.getOutputStream();
             in = conn.getInputStream();
             System.out.println("Server connected to client:");
+            
+            JSONObject startMessage = new JSONObject();
+            startMessage.put("type", "start");
+            byte[] startOutput = JsonUtils.toByteArray(startMessage);
+            NetworkUtils.send(out, startOutput);
+            
             while (!quit) {
                 byte[] messageBytes = NetworkUtils.receive(in);
                 JSONObject message = JsonUtils.fromByteArray(messageBytes);

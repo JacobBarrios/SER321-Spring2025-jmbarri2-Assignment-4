@@ -78,6 +78,12 @@ class ThreadHandler extends Thread {
 			out = conn.getOutputStream();
 			in = conn.getInputStream();
 			System.out.println("Server connected to client:");
+			
+			JSONObject startMessage = new JSONObject();
+			startMessage.put("type", "start");
+			byte[] startOutput = JsonUtils.toByteArray(startMessage);
+			NetworkUtils.send(out, startOutput);
+			
 			while (!quit) {
 				System.out.println("Accepting a Request...");
 				byte[] messageBytes = NetworkUtils.receive(in);
