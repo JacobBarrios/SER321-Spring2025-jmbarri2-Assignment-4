@@ -15,7 +15,7 @@ import org.json.JSONObject;
 public class JsonUtils {
     public static JSONObject fromByteArray(byte[] bytes) {
         String jsonString = new String(bytes);
-        System.out.println(jsonString);
+        System.out.println("New json request: " + jsonString);
         return new JSONObject(jsonString);
     }
 

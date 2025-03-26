@@ -39,6 +39,7 @@ class Performer {
         sleep(6000); // to make this take a bit longer
         state.add(str);
         json.put("data", state.toString());
+        System.out.println("End add");
         return json;
     }
     

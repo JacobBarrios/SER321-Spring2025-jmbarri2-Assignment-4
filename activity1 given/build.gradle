@@ -11,6 +11,22 @@ dependencies {
 //define main class
 mainClassName = 'Concentration'
 
+task runClient(type: JavaExec) {
+  group 'client'
+  description 'Creates client socket sends a message to the server'
+
+  classpath = sourceSets.main.runtimeClasspath
+  standardInput = System.in
+
+  main = 'taskone.Client'
+  standardInput = System.in
+
+  // run with arguments e.g.: gradle runClient -Phost=localhost -Pport=8080 -q --console=plain
+  if (project.hasProperty("host") && project.hasProperty('port')) {
+    args(project.getProperty('host'), project.getProperty('port'));
+  }
+}
+
 task runServer(type: JavaExec) {
   group 'server'
   description 'Creates Server socket waits for messages'
@@ -26,32 +42,16 @@ task runServer(type: JavaExec) {
   }
 }
 
-task runClient(type: JavaExec) {
-  group 'client'
-  description 'Creates client socket sends a message to the server'
-
-  classpath = sourceSets.main.runtimeClasspath
-  standardInput = System.in
-
-  main = 'taskone.Client'
-  standardInput = System.in
-  
-  // run with arguments e.g.: gradle runClient -Phost=localhost -Pport=8080 -q --console=plain
-  if (project.hasProperty("host") && project.hasProperty('port')) {
-    args(project.getProperty('host'), project.getProperty('port'));
-  }
-}
-
 task runThreadedServer(type: JavaExec) {
   group 'server'
-  description 'Creates a threaded server that can receive and send protocols to multiple clients'
+  description 'Creates a threaded server that can receive and send protocols to/from multiple clients'
 
   classpath = sourceSets.main.runtimeClasspath
   standardInput = System.in
 
   main = 'taskone.ThreadedServer'
 
-  // run with arguments e.g.: gradle runServer -Pport=8080 -q --console=plain
+  // run with arguments e.g.: gradle runThreadedServer -Pport=8080 -q --console=plain
   if (project.hasProperty('port')) {
     args(project.getProperty('port'));
   }
