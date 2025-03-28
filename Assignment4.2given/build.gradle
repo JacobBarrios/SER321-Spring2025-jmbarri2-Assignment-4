@@ -43,7 +43,7 @@ protobuf {
     }
 }
 def host = 'localhost'
-def port = 8000
+def port = 8080
 
 // task reading in the arguments if any given, if not the default from above will be used
 task arguments {
@@ -55,7 +55,7 @@ task arguments {
     }
 }
 
-//gradle runClient -Phost='localhost' -Pport=9099'
+//gradle runClient -Phost='localhost' -Pport=8080'
 task runClient(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     description = "Run Client"
@@ -66,17 +66,17 @@ task runClient(type: JavaExec) {
     args port
 }
 
-//gradle runServer -Pport=9099
+//gradle runServer -Pport=8080
 task runServer(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     description = "Run Server"
-    main = 'server.SockBaseServer'
+    main = 'server.ServerMain'
     // default args
     args port
     args false
 }
 
-//gradle runServer -Pport=9099
+//gradle runServer -Pport=8080
 task runServerGrading(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     description = "Run Server"

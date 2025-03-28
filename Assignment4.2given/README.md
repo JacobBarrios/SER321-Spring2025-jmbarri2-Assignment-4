@@ -4,7 +4,7 @@ server.
 
 ## How to run the program
 The proto file can be compiled using
-``gradle generateProto``  
+``gradle generateProto``
 
 This will also be done when building the project.  
 

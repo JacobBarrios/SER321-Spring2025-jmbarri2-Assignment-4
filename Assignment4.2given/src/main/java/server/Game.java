@@ -42,8 +42,6 @@ public class Game {
 
     /**
      * Sets the won flag to true
-     * @param args Unused.
-     * @return Nothing.
      */
     public void setWon(){
         won = true;
@@ -159,7 +157,6 @@ public class Game {
 
     /**
      * Creates a completely new Sudoku board with Xs
-     * @return Nothing.
      */
     private void prepareForPlay() {
         int empties = difficulty;

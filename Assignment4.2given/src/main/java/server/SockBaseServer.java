@@ -10,7 +10,7 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-class SockBaseServer {
+class SockBaseServer extends Thread {
     static String logFilename = "logs.txt";
 
     // Please use these as given so it works with our test cases
@@ -29,14 +29,15 @@ class SockBaseServer {
     private boolean inGame = false; // a game was started (you can decide if you want this
     private String name; // player name
 
-    private int currentState =1; // I used something like this to keep track of where I am in the game, you can decide if you want that as well
+    private int currentState = 1; // I used something like this to keep track of where I am in the game, you can decide if you want that as well
 
     private static boolean grading = true; // if the grading board should be used
 
-    public SockBaseServer(Socket sock, Game game, int id) {
+    public SockBaseServer(Socket sock, Game game, int id, boolean grading) {
         this.clientSocket = sock;
         this.game = game;
         this.id = id;
+        SockBaseServer.grading = grading;
         try {
             in = clientSocket.getInputStream();
             out = clientSocket.getOutputStream();
@@ -44,6 +45,15 @@ class SockBaseServer {
             System.out.println("Error in constructor: " + e);
         }
     }
+    
+    public void run() {
+		try {
+			startGame();
+		}
+		catch(IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
     /**
      * Received a request, starts to evaluate what it is and handles it, not complete
@@ -66,15 +76,26 @@ class SockBaseServer {
                         } else {
                             response = nameRequest(op);
                         }
+                        
+                        break;
+                    case LEADERBOARD:
+                        response = leaderRequest(op);
+                        
                         break;
                     case START:
-                        response = startGame(op); // not complete!
+                        response = startGame(op);
 
+                        break;
+                    case QUIT:
+                        quit = true;
+                        response = quit();
+                        
                         break;
                     default:
                         response = error(2, op.getOperationType().name());
                         break;
                 }
+                
                 response.writeDelimitedTo(out);
 
                 if (quit) {
@@ -98,6 +119,18 @@ class SockBaseServer {
         if (in != null)   in.close();
         if (out != null)  out.close();
         if (serverSock != null) serverSock.close();
+    }
+    
+    private Response leaderRequest(Request op) throws IOException {
+        System.out.println("Got leaderboard request");
+        
+        currentState = 2;
+        
+        return Response.newBuilder()
+                .setResponseType(Response.ResponseType.LEADERBOARD)
+                .setMenuoptions(menuOptions)
+                .setNext(currentState)
+                .build();
     }
 
     /**
@@ -126,11 +159,16 @@ class SockBaseServer {
 
         System.out.println("start game");
 
-        game.newGame(grading, 4); // difficulty should be read from request!
+        game.newGame(grading, op.getDifficulty()); // difficulty should be read from request!
 
         System.out.println(game.getDisplayBoard());
 
         return Response.newBuilder()
+                .setResponseType(Response.ResponseType.START)
+                .setBoard(game.getDisplayBoard())
+                .setMessage("\n")
+                .setMenuoptions(gameOptions)
+                .setNext(3)
                 .build();
     }
 
@@ -220,18 +258,19 @@ class SockBaseServer {
             return logs;
         }
     }
+}
 
-
+class ServerMain {
     public static void main (String[] args) throws Exception {
         if (args.length != 2) {
             System.out.println("Expected arguments: <port(int)> <delay(int)>");
             System.exit(1);
         }
-        int port = 8000; // default port
-        grading = Boolean.parseBoolean(args[1]);
+        int port = 8080; // default port
+        boolean grading = Boolean.parseBoolean(args[1]);
         Socket clientSocket = null;
         ServerSocket socket = null;
-
+        
         try {
             port = Integer.parseInt(args[0]);
         } catch (NumberFormatException nfe) {
@@ -251,11 +290,12 @@ class SockBaseServer {
                 clientSocket = socket.accept();
                 System.out.println("Attempting to connect to client-" + id);
                 Game game = new Game();
-                SockBaseServer server = new SockBaseServer(clientSocket, game, id++);
-                server.startGame();
+                SockBaseServer server = new SockBaseServer(clientSocket, game, id++, grading);
+                server.run();
             } catch (Exception e) {
                 System.out.println("Error in accepting client connection.");
             }
         }
     }
+    
 }

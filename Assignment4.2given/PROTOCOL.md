@@ -72,14 +72,12 @@ CL Request
 While in game the client sends a row and column request, which includes the row, column as ints and a value as int which should be placed at this spot.
 ```
 RequestType: UPDATE
-Required Fields: row, 
-				 column, 
-				 value
+Required Fields: row, column, value
 ```
 
 SV Response
 
-if game is not yet won the current board will be send and the eval field which will be used to specify the result of the clients request.
+if game is not yet won the current board will be sent and the eval field which will be used to specify the result of the clients request.
 ```
 	ResponseType: PLAY
 	Required Fields: board, -- current board to be displayed to player (getDisplayBoard())
@@ -88,7 +86,7 @@ if game is not yet won the current board will be send and the eval field which w
 					 type -- represents what happened with the current request -- see response.proto for options
                      next = 3
  ```                    
-OR if game is won/lost the current finished board will be send and eval will specify that the game is won
+OR if game is won/lost the current finished board will be sent and eval will specify that the game is won
 ```
 	ResponseType: WON
 	Required Fields: board,

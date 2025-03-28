@@ -12,7 +12,7 @@ class SockBaseClient {
         OutputStream out = null;
         InputStream in = null;
         int i1=0, i2=0;
-        int port = 8000; // default port
+        int port = 8080; // default port
 
         // Make sure two arguments are given
         if (args.length != 2) {
@@ -50,7 +50,12 @@ class SockBaseClient {
                 switch (response.getResponseType()) {
                     case GREETING:
                         System.out.println(response.getMessage());
-                        req = chooseMenu(req, response);
+                        req = chooseMenuRequest(req, response);
+                        
+                        break;
+                    case START:
+                        req = chooseInGameMenu(req, response);
+                        
                         break;
                     case ERROR:
                         System.out.println("Error: " + response.getMessage() + "Type: " + response.getErrorType());
@@ -60,6 +65,7 @@ class SockBaseClient {
                             System.out.println("That error type is not handled yet");
                             req = nameRequest();
                         }
+                        
                         break;
                 }
                 req.build().writeDelimitedTo(out);
@@ -69,6 +75,30 @@ class SockBaseClient {
         } finally {
             exitAndClose(in, out, serverSock);
         }
+    }
+    
+    static int getDifficulty() throws IOException {
+        System.out.println("Please provide difficulty level (1-20) for the game.");
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        int difficultyToSend = 1; // Default value
+        boolean selecting = true;
+        
+        while (selecting) {
+            try {
+                String stringDifficulty = stdin.readLine();
+                difficultyToSend = Integer.parseInt(stringDifficulty);
+                
+                if (difficultyToSend < 1 || difficultyToSend > 20) {
+                    System.out.println("Please enter a difficulty between 1 and 20.");
+                } else {
+                    selecting = false;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Difficulty should be an integer.");
+            }
+        }
+        
+        return difficultyToSend;
     }
 
     /**
@@ -84,12 +114,116 @@ class SockBaseClient {
                 .setOperationType(Request.OperationType.NAME)
                 .setName(strToSend);
     }
+    
+    static Request.Builder clearRequest(Request.Builder req) throws IOException {
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        boolean selecting = true;
+        String rowString = "-1";
+        String columnString = "-1";
+        int value = 0;
+        
+        while(selecting) {
+            System.out.println("Do you want to clear\n1 - at an index\n2 - a row\n3 - a column\n4 - a grid\n5 - the board back to it's original state\nEnter a number 1-5:");
+            String clearChoice = stdin.readLine();
+            
+            switch (clearChoice) {
+                case "1":
+                    System.out.println("Enter row (1-9)");
+                    rowString = stdin.readLine();
+                    System.out.println("Enter column (1-9)");
+                    columnString = stdin.readLine();
+                    value = 1;
+                    selecting = false;
+                    
+                    break;
+                case "2":
+                    System.out.println("Enter row (1-9)");
+                    rowString = stdin.readLine();
+                    value = 2;
+                    selecting = false;
+                    
+                    break;
+                case "3":
+                    System.out.println("Enter column (1-9)");
+                    columnString = stdin.readLine();
+                    value = 3;
+                    selecting = false;
+                    
+                    break;
+                case "4":
+                    System.out.println("Enter index of grid");
+                    rowString = stdin.readLine();
+                    value = 4;
+                    selecting = false;
+                    
+                    break;
+                case "5":
+                    System.out.println("Clearing board back to original");
+                    value = 5;
+                    selecting = false;
+                    
+                    break;
+                default:
+                    System.out.println("Please enter valid input");
+            }
+        }
+        
+        return req.setOperationType(Request.OperationType.CLEAR)
+                .setRow(Integer.parseInt(rowString))
+                .setColumn(Integer.parseInt(columnString))
+                .setValue(value);
+        
+    }
+    
+    static Request.Builder chooseInGameMenu(Request.Builder req, Response response) throws IOException {
+        int row;
+        int column;
+        int value;
+        
+        System.out.println(response.getBoard());
+        System.out.println(response.getMenuoptions());
+        
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        String menu_select = stdin.readLine();
+        System.out.println("Selected: " + menu_select);
+        
+        try {
+            row = Integer.parseInt(menu_select);
+            
+            System.out.println("Enter column (1-9)");
+            column = Integer.parseInt(stdin.readLine());
+            
+            System.out.printf("What value do you want to insert at row: %d, column: %d?", row, column);
+            value = Integer.parseInt(stdin.readLine());
+            
+            req.setOperationType(Request.OperationType.UPDATE)
+                    .setRow(row)
+                    .setColumn(column)
+                    .setValue(value);
+        }
+        catch(NumberFormatException e) {
+            if(menu_select.equals("c")) {
+                System.out.println("Clear board");
+                req = clearRequest(req);
+            }
+            else if(menu_select.equals("r")) {
+                System.out.println("New board");
+                req.setOperationType(Request.OperationType.CLEAR)
+                        .setRow(-1)
+                        .setColumn(-1)
+                        .setValue(6);
+            }
+        }
+        
+        return req;
+        
+    }
 
     /**
      * Shows the main menu and lets the user choose a number, it builds the request for the next server call
      * @return Request.Builder which holds the information the server needs for a specific request
      */
-    static Request.Builder chooseMenu(Request.Builder req, Response response) throws IOException {
+    static Request.Builder chooseMenuRequest(Request.Builder req, Response response) throws IOException {
         while (true) {
             System.out.println(response.getMenuoptions());
             System.out.print("Enter a number 1-3: ");
@@ -98,8 +232,16 @@ class SockBaseClient {
             System.out.println(menu_select);
             switch (menu_select) {
                 // needs to include the other requests
+                case "1":
+                    req.setOperationType(Request.OperationType.LEADERBOARD);
+                    return req;
                 case "2":
-                    req.setOperationType(Request.OperationType.START); // this is not a complete START request!! Just as example
+                    req.setOperationType(Request.OperationType.START)
+                            .setDifficulty(getDifficulty());
+                    System.out.println(req.isInitialized());
+                    return req;
+                case "3":
+                    req.setOperationType(Request.OperationType.QUIT);
                     return req;
                 default:
                     System.out.println("\nNot a valid choice, please choose again");
@@ -119,7 +261,7 @@ class SockBaseClient {
     }
 
     /**
-     * Handles the clear menu logic when the user chooses that in Game menu. It retuns the values exactly
+     * Handles the clear menu logic when the user chooses that in Game menu. It returns the values exactly
      * as needed in the CLEAR request row int[0], column int[1], value int[3]
      */
     static int[] boardSelectionClear() throws Exception {
