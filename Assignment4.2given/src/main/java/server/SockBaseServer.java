@@ -8,7 +8,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 class SockBaseServer extends Thread {
     static String logFilename = "logs.txt";
@@ -79,12 +78,18 @@ class SockBaseServer extends Thread {
                         
                         break;
                     case LEADERBOARD:
-                        response = leaderRequest(op);
+                        //TODO update leaderboard request
+                        response = leaderRequest();
                         
                         break;
                     case START:
-                        response = startGame(op);
+                        response = startRequest(op);
 
+                        break;
+                    case UPDATE:
+                        //TODO if game not done send play, if won send won
+                        response = playRequest(op);
+                        
                         break;
                     case QUIT:
                         quit = true;
@@ -120,18 +125,6 @@ class SockBaseServer extends Thread {
         if (out != null)  out.close();
         if (serverSock != null) serverSock.close();
     }
-    
-    private Response leaderRequest(Request op) throws IOException {
-        System.out.println("Got leaderboard request");
-        
-        currentState = 2;
-        
-        return Response.newBuilder()
-                .setResponseType(Response.ResponseType.LEADERBOARD)
-                .setMenuoptions(menuOptions)
-                .setNext(currentState)
-                .build();
-    }
 
     /**
      * Handles the name request and returns the appropriate response
@@ -151,18 +144,30 @@ class SockBaseServer extends Thread {
                 .setNext(currentState)
                 .build();
     }
-
+    
+    private Response leaderRequest() throws IOException {
+        System.out.println("Got leaderboard request");
+        
+        currentState = 2;
+        
+        return Response.newBuilder()
+                .setResponseType(Response.ResponseType.LEADERBOARD)
+                .setMenuoptions(menuOptions)
+                .setNext(currentState)
+                .build();
+    }
+    
     /**
      * Starts to handle start of a game after START request, is not complete of course, just shows how to get to the board
      */
-    private Response startGame(Request op) throws IOException {
-
-        System.out.println("start game");
+    private Response startRequest(Request op) throws IOException {
+        System.out.println("[DEBUG] start request");
 
         game.newGame(grading, op.getDifficulty()); // difficulty should be read from request!
 
-        System.out.println(game.getDisplayBoard());
-
+        System.out.println("[DEBUG] Player Board: \n" + game.getDisplayBoard());
+        System.out.println("[DEBUG] Solved Board: \n" + game.getSolvedBoard());
+        
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.START)
                 .setBoard(game.getDisplayBoard())
@@ -171,12 +176,108 @@ class SockBaseServer extends Thread {
                 .setNext(3)
                 .build();
     }
+    
+    //TODO implement play request
+    private Response playRequest(Request op) throws IOException {
+        int row = op.getRow();
+        int column = op.getColumn();
+        int value = op.getValue();
+        int eval;
+        Response.Builder response = Response.newBuilder();
+        
+        System.out.println("[DEBUG] play request");
+        System.out.println("[DEBUG] Row: " + row);
+        System.out.println("[DEBUG] Column: " + column);
+        System.out.println("[DEBUG] Value: " + value);
+        
+        System.out.println("[DEBUG] Character at coordinates selected: " + game.getPlayerBoard()[row][column]);
+        
+        eval = game.updateBoard(row, column, value, 0);
+        
+        if(game.getWon()) {
+            System.out.println("[DEBUG] won the game");
+            response = Response.newBuilder()
+                    .setResponseType(Response.ResponseType.WON)
+                    .setBoard(game.getDisplayBoard())
+                    .setType(Response.EvalType.UPDATE)
+                    .setMenuoptions(menuOptions)
+                    .setMessage("You solved the current puzzle, good job!")
+                    .setPoints(game.getPoints())
+                    .setNext(2);
+        }
+        else {
+            if(eval == 0) {
+                game.setPoints(20);
+                System.out.println("[DEBUG] Valid move");
+                
+                response =  Response.newBuilder()
+                        .setResponseType(Response.ResponseType.PLAY)
+                        .setBoard(game.getDisplayBoard())
+                        .setType(Response.EvalType.UPDATE)
+                        .setMenuoptions(gameOptions)
+                        .setPoints(game.getPoints())
+                        .setNext(3);
+            }
+            else if(eval == 1) {
+                game.setPoints(-2);
+                System.out.println("[DEBUG] Can't fill with number");
+                
+                response = Response.newBuilder()
+                        .setResponseType(Response.ResponseType.PLAY)
+                        .setBoard(game.getDisplayBoard())
+                        .setType(Response.EvalType.PRESET_VALUE)
+                        .setMenuoptions(gameOptions)
+                        .setPoints(game.getPoints())
+                        .setNext(3);
+            }
+            else if(eval == 2) {
+                game.setPoints(-2);
+                System.out.println("[DEBUG] Duplicate row");
+                
+                response = Response.newBuilder()
+                        .setResponseType(Response.ResponseType.PLAY)
+                        .setBoard(game.getDisplayBoard())
+                        .setPoints(game.getPoints())
+                        .setMenuoptions(gameOptions)
+                        .setType(Response.EvalType.DUP_ROW)
+                        .setNext(3);
+            }
+            else if(eval == 3) {
+                game.setPoints(-2);
+                System.out.println("[DEBUG] Duplicate column");
+                
+                response = Response.newBuilder()
+                        .setResponseType(Response.ResponseType.PLAY)
+                        .setBoard(game.getDisplayBoard())
+                        .setPoints(game.getPoints())
+                        .setMenuoptions(gameOptions)
+                        .setType(Response.EvalType.DUP_COL)
+                        .setNext(3);
+            }
+            else if(eval == 4) {
+                game.setPoints(-2);
+                System.out.println("[DEBUG] Duplicate grid");
+                
+                response = Response.newBuilder()
+                        .setResponseType(Response.ResponseType.PLAY)
+                        .setBoard(game.getDisplayBoard())
+                        .setPoints(game.getPoints())
+                        .setMenuoptions(gameOptions)
+                        .setType(Response.EvalType.DUP_GRID)
+                        .setNext(3);
+            }
+            
+        }
+        
+        return response.build();
+        
+    }
 
     /**
      * Handles the quit request, might need adaptation
      * @return Request.Builder holding the reponse back to Client as specified in Protocol
      */
-    private  Response quit() throws IOException {
+    private Response quit() throws IOException {
         this.inGame = false;
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.BYE)
@@ -291,7 +392,7 @@ class ServerMain {
                 System.out.println("Attempting to connect to client-" + id);
                 Game game = new Game();
                 SockBaseServer server = new SockBaseServer(clientSocket, game, id++, grading);
-                server.run();
+                server.start();
             } catch (Exception e) {
                 System.out.println("Error in accepting client connection.");
             }

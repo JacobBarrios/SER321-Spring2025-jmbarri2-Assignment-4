@@ -27,9 +27,10 @@ class SockBaseClient {
             System.exit(2);
         }
 
-        // Build the first request object just including the name
+        // Build the first request object just including your name
         Request op = nameRequest().build();
         Response response;
+        
         try {
             // connect to the server
             serverSock = new Socket(host, port);
@@ -43,20 +44,28 @@ class SockBaseClient {
             while (true) {
                 // read from the server
                 response = Response.parseDelimitedFrom(in);
-                System.out.println("Got a response: " + response.toString());
+                System.out.println("[DEBUG] Got a response: " + response.toString());
 
                 Request.Builder req = Request.newBuilder();
 
                 switch (response.getResponseType()) {
                     case GREETING:
-                        System.out.println(response.getMessage());
+                        System.out.println(response.getMessage()); // Saying hello to user
                         req = chooseMenuRequest(req, response);
                         
                         break;
                     case START:
-                        req = chooseInGameMenu(req, response);
+                        // Goes to in game menu insert, clear, new board
+                        req = chooseInGameMenuRequest(req, response);
                         
                         break;
+                    case PLAY:
+                        // Keep playing
+                        req = playRequest(req, response);
+                        break;
+                    case BYE:
+                        
+                        return;
                     case ERROR:
                         System.out.println("Error: " + response.getMessage() + "Type: " + response.getErrorType());
                         if (response.getNext() == 1) {
@@ -74,6 +83,55 @@ class SockBaseClient {
             e.printStackTrace();
         } finally {
             exitAndClose(in, out, serverSock);
+        }
+    }
+
+    /**
+     * handles building a simple name requests, asks the user for their name and builds the request
+     * @return Request.Builder which holds all teh information for the NAME request
+     */
+    static Request.Builder nameRequest() throws IOException {
+        System.out.println("Please provide your name for the server.");
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        String strToSend = stdin.readLine();
+
+        return Request.newBuilder()
+                .setOperationType(Request.OperationType.NAME)
+                .setName(strToSend);
+    }
+
+    /**
+     * Shows the main menu and lets the user choose a number, it builds the request for the next server call
+     * @return Request.Builder which holds the information the server needs for a specific request
+     */
+    static Request.Builder chooseMenuRequest(Request.Builder req, Response response) throws IOException {
+        while (true) {
+            System.out.println(response.getMenuoptions());
+            System.out.print("Enter a number 1-3: ");
+            
+            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+            String menu_select = stdin.readLine();
+            System.out.println("[DEBUG] Selected: " + menu_select);
+            switch (menu_select) {
+                // needs to include the other requests
+                case "1":
+                    System.out.println("[DEBUG] Chose leaderboard");
+                    req.setOperationType(Request.OperationType.LEADERBOARD);
+                    return req;
+                case "2":
+                    // Start a new game from main menu
+                    System.out.println("[DEBUG] Chose start new game");
+                    req.setOperationType(Request.OperationType.START)
+                            .setDifficulty(getDifficulty());
+                    return req;
+                case "3":
+                    System.out.println("[DEBUG] Chose quit");
+                    req.setOperationType(Request.OperationType.QUIT);
+                    return req;
+                default:
+                    System.out.println("\nNot a valid choice, please choose again");
+                    break;
+            }
         }
     }
     
@@ -100,82 +158,8 @@ class SockBaseClient {
         
         return difficultyToSend;
     }
-
-    /**
-     * handles building a simple name requests, asks the user for their name and builds the request
-     * @return Request.Builder which holds all teh information for the NAME request
-     */
-    static Request.Builder nameRequest() throws IOException {
-        System.out.println("Please provide your name for the server.");
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        String strToSend = stdin.readLine();
-
-        return Request.newBuilder()
-                .setOperationType(Request.OperationType.NAME)
-                .setName(strToSend);
-    }
     
-    static Request.Builder clearRequest(Request.Builder req) throws IOException {
-        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        boolean selecting = true;
-        String rowString = "-1";
-        String columnString = "-1";
-        int value = 0;
-        
-        while(selecting) {
-            System.out.println("Do you want to clear\n1 - at an index\n2 - a row\n3 - a column\n4 - a grid\n5 - the board back to it's original state\nEnter a number 1-5:");
-            String clearChoice = stdin.readLine();
-            
-            switch (clearChoice) {
-                case "1":
-                    System.out.println("Enter row (1-9)");
-                    rowString = stdin.readLine();
-                    System.out.println("Enter column (1-9)");
-                    columnString = stdin.readLine();
-                    value = 1;
-                    selecting = false;
-                    
-                    break;
-                case "2":
-                    System.out.println("Enter row (1-9)");
-                    rowString = stdin.readLine();
-                    value = 2;
-                    selecting = false;
-                    
-                    break;
-                case "3":
-                    System.out.println("Enter column (1-9)");
-                    columnString = stdin.readLine();
-                    value = 3;
-                    selecting = false;
-                    
-                    break;
-                case "4":
-                    System.out.println("Enter index of grid");
-                    rowString = stdin.readLine();
-                    value = 4;
-                    selecting = false;
-                    
-                    break;
-                case "5":
-                    System.out.println("Clearing board back to original");
-                    value = 5;
-                    selecting = false;
-                    
-                    break;
-                default:
-                    System.out.println("Please enter valid input");
-            }
-        }
-        
-        return req.setOperationType(Request.OperationType.CLEAR)
-                .setRow(Integer.parseInt(rowString))
-                .setColumn(Integer.parseInt(columnString))
-                .setValue(value);
-        
-    }
-    
-    static Request.Builder chooseInGameMenu(Request.Builder req, Response response) throws IOException {
+    static Request.Builder chooseInGameMenuRequest(Request.Builder req, Response response) throws IOException {
         int row;
         int column;
         int value;
@@ -188,66 +172,84 @@ class SockBaseClient {
         System.out.println("Selected: " + menu_select);
         
         try {
+            // Insert row
             row = Integer.parseInt(menu_select);
             
+            // Insert column
             System.out.println("Enter column (1-9)");
             column = Integer.parseInt(stdin.readLine());
             
-            System.out.printf("What value do you want to insert at row: %d, column: %d?", row, column);
+            // Insert value
+            System.out.printf("What value do you want to insert at row: %d, column: %d?\n", row, column);
             value = Integer.parseInt(stdin.readLine());
             
             req.setOperationType(Request.OperationType.UPDATE)
-                    .setRow(row)
-                    .setColumn(column)
+                    .setRow(row - 1)
+                    .setColumn(column - 1)
                     .setValue(value);
         }
         catch(NumberFormatException e) {
-            if(menu_select.equals("c")) {
-                System.out.println("Clear board");
-                req = clearRequest(req);
-            }
-            else if(menu_select.equals("r")) {
-                System.out.println("New board");
-                req.setOperationType(Request.OperationType.CLEAR)
-                        .setRow(-1)
-                        .setColumn(-1)
-                        .setValue(6);
-            }
+			switch(menu_select) {
+                // If you want to clear
+                case "c":
+					System.out.println("Clear board");
+					try {
+						int[] coordinates = boardSelectionClear();
+						req.setOperationType(Request.OperationType.CLEAR)
+								.setRow(coordinates[0])
+								.setColumn(coordinates[1])
+								.setValue(coordinates[2]);
+					}
+					catch(Exception ex) {
+						throw new RuntimeException(ex);
+					}
+                    
+                    break;
+                // If you want to get a new board
+                case "r":
+					System.out.println("New board");
+					req.setOperationType(Request.OperationType.CLEAR)
+							.setRow(-1)
+							.setColumn(-1)
+							.setValue(6);
+				// If you want to exit
+                case "exit":
+                    req.setOperationType(Request.OperationType.QUIT);
+			}
         }
         
         return req;
         
     }
-
-    /**
-     * Shows the main menu and lets the user choose a number, it builds the request for the next server call
-     * @return Request.Builder which holds the information the server needs for a specific request
-     */
-    static Request.Builder chooseMenuRequest(Request.Builder req, Response response) throws IOException {
-        while (true) {
-            System.out.println(response.getMenuoptions());
-            System.out.print("Enter a number 1-3: ");
-            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-            String menu_select = stdin.readLine();
-            System.out.println(menu_select);
-            switch (menu_select) {
-                // needs to include the other requests
-                case "1":
-                    req.setOperationType(Request.OperationType.LEADERBOARD);
-                    return req;
-                case "2":
-                    req.setOperationType(Request.OperationType.START)
-                            .setDifficulty(getDifficulty());
-                    System.out.println(req.isInitialized());
-                    return req;
-                case "3":
-                    req.setOperationType(Request.OperationType.QUIT);
-                    return req;
-                default:
-                    System.out.println("\nNot a valid choice, please choose again");
-                    break;
-            }
+    
+    static Request.Builder playRequest(Request.Builder req, Response response) throws IOException {
+        // Tell client the result of there request
+        processEval(response);
+        
+        // Continue game
+        return chooseInGameMenuRequest(req, response);
+        
+    }
+    
+    static void processEval(Response response) {
+        if(response.getType() == Response.EvalType.UPDATE) {
+            System.out.println("Number was filled successfully");
         }
+        else if(response.getType() == Response.EvalType.PRESET_VALUE) {
+            System.out.println("Couldn't fill in spot");
+        }
+        else if(response.getType() == Response.EvalType.DUP_ROW) {
+            System.out.println("Number exists in row");
+        }
+        else if(response.getType() == Response.EvalType.DUP_COL) {
+            System.out.println("Number exists in row");
+        }
+        else if(response.getType() == Response.EvalType.DUP_GRID) {
+            System.out.println("Number exists in grid");
+        }
+        
+        System.out.println("Current points: " + response.getPoints());
+    
     }
 
     /**

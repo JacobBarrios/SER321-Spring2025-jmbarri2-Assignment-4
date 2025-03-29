@@ -1,6 +1,5 @@
 package server;
 import java.util.*;
-import java.io.*;
 
 /**
  * Class: Game 
@@ -268,7 +267,7 @@ public class Game {
             resultType = 5; // something was off
 
         }
-        System.out.println(resultType);
+        System.out.println("[DEBUG] Result of updateBoard: " + resultType);
         return resultType;
     }
 
@@ -425,6 +424,25 @@ public class Game {
 
         return(sb.toString());
     }
+    
+    public String getDisplaySolvedBoard() {
+        StringBuilder sb = new StringBuilder();
+        
+        for (int row = 0; row < solvedBoard.length; row++) {
+            if (row > 0 && row % 3 == 0) {
+                sb.append("\n");
+            }
+            for (int col = 0; col < solvedBoard.length; col++) {
+                if (col > 0 && col % 3 == 0) {
+                    sb.append(" ");
+                }
+                sb.append(solvedBoard[row][col]).append(" ");
+            }
+            sb.append("\n");
+        }
+        
+        return(sb.toString());
+    }
 
     public int getPoints() {
         return points;
@@ -433,4 +451,10 @@ public class Game {
     public int setPoints(int diff) {
         return points += diff;
     }
+    
+    public char[][] getPlayerBoard() {
+        return playerBoard;
+    }
+    
+    public String getSolvedBoard() {return getDisplaySolvedBoard();}
 }
