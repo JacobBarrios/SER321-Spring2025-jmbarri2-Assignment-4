@@ -47,10 +47,11 @@ class SockBaseClient {
                 System.out.println("[DEBUG] Got a response: " + response.toString());
 
                 Request.Builder req = Request.newBuilder();
-
+                
                 switch (response.getResponseType()) {
                     case GREETING:
-                        System.out.println(response.getMessage()); // Saying hello to user
+                        // Server saying hello to client
+                        System.out.println(response.getMessage());
                         req = chooseMenuRequest(req, response);
                         
                         break;
@@ -60,13 +61,38 @@ class SockBaseClient {
                         
                         break;
                     case PLAY:
-                        // Keep playing
+                        // Server said keep playing
                         req = playRequest(req, response);
+                        
+                        break;
+                    case WON:
+                        // Server said client won
+                        System.out.println(response.getMessage());
+                        req = chooseMenuRequest(req, response);
+                        
+                        break;
+                    case LEADERBOARD:
+                        // Server sends leaderboard
+                        System.out.println("===== Leaderboard =====");
+                        
+                        // Iterate through the repeated field
+                        for (Entry player : response.getLeaderList()) {
+                            System.out.println("Name: " + player.getName());
+                            System.out.println("Points: " + player.getPoints());
+                            System.out.println("Logins: " + player.getLogins());
+                            System.out.println("----------------------");
+                        }
+                        
+                        req = chooseMenuRequest(req, response);
+                        
                         break;
                     case BYE:
+                        // Server said to quit
+                        System.out.println("Quiting");
                         
                         return;
                     case ERROR:
+                        // Server sent an error
                         System.out.println("Error: " + response.getMessage() + "Type: " + response.getErrorType());
                         if (response.getNext() == 1) {
                             req = nameRequest();
@@ -169,7 +195,7 @@ class SockBaseClient {
         
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         String menu_select = stdin.readLine();
-        System.out.println("Selected: " + menu_select);
+        System.out.println("[DEBUG] Selected: " + menu_select);
         
         try {
             // Insert row
@@ -192,7 +218,7 @@ class SockBaseClient {
 			switch(menu_select) {
                 // If you want to clear
                 case "c":
-					System.out.println("Clear board");
+					System.out.println("[DEBUG] Clear board");
 					try {
 						int[] coordinates = boardSelectionClear();
 						req.setOperationType(Request.OperationType.CLEAR)
@@ -207,7 +233,7 @@ class SockBaseClient {
                     break;
                 // If you want to get a new board
                 case "r":
-					System.out.println("New board");
+					System.out.println("[DEBUG] New board");
 					req.setOperationType(Request.OperationType.CLEAR)
 							.setRow(-1)
 							.setColumn(-1)

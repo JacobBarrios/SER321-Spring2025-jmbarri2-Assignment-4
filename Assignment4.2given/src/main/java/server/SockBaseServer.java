@@ -3,30 +3,41 @@ package server;
 import buffers.RequestProtos.*;
 import buffers.ResponseProtos.*;
 
+import client.Player;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.util.*;
 
 class SockBaseServer extends Thread {
     static String logFilename = "logs.txt";
+    static String leaderFilename = "leaderboard.json";
 
     // Please use these as given so it works with our test cases
     static String menuOptions = "\nWhat would you like to do? \n 1 - to see the leader board \n 2 - to enter a game \n 3 - quit the game";
     static String gameOptions = "\nChoose an action: \n (1-9) - Enter an int to specify the row you want to update \n c - Clear number \n r - New Board";
-
-
-    ServerSocket serv = null;
+    
     InputStream in = null;
     OutputStream out = null;
     Socket clientSocket = null;
     private final int id; // client id
+    Response response;
 
     Game game; // current game
 
     private boolean inGame = false; // a game was started (you can decide if you want this
     private String name; // player name
+    private JSONArray leaderboardList;
 
     private int currentState = 1; // I used something like this to keep track of where I am in the game, you can decide if you want that as well
 
@@ -58,12 +69,34 @@ class SockBaseServer extends Thread {
      * Received a request, starts to evaluate what it is and handles it, not complete
      */
     public void startGame() throws IOException {
+        Path leaderJSONPath = Paths.get(leaderFilename);
+        // Create leaderboard.json file
+        if (!Files.exists(leaderJSONPath)) {
+            try {
+                // Create a new JSON file if it doesn't exist
+                Files.createFile(leaderJSONPath);
+                System.out.println("[DEBUG] File created: " + leaderJSONPath);
+                
+                // Create a sample empty JSONArray and write it to the file
+                JSONArray emptyArray = new JSONArray();
+                Files.write(leaderJSONPath, emptyArray.toString().getBytes());
+                System.out.println("[DEBUG] Empty array: " + emptyArray.toString());
+                System.out.println("[DEBUG] Initialized empty JSON array in the file.");
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        // Get the json list from the json file
+        String jsonString = new String(Files.readAllBytes(Paths.get(leaderFilename)));
+        leaderboardList = new JSONArray(jsonString);
+        
         try {
             while (true) {
                 // read the proto object and put into new object
                 Request op = Request.parseDelimitedFrom(in);
-                System.out.println("Got request: " + op.toString());
-                Response response;
+                System.out.println("[DEBUG] Got request: " + op.toString());
 
                 boolean quit = false;
 
@@ -78,7 +111,6 @@ class SockBaseServer extends Thread {
                         
                         break;
                     case LEADERBOARD:
-                        //TODO update leaderboard request
                         response = leaderRequest();
                         
                         break;
@@ -87,8 +119,10 @@ class SockBaseServer extends Thread {
 
                         break;
                     case UPDATE:
-                        //TODO if game not done send play, if won send won
                         response = playRequest(op);
+                        
+                        break;
+                    case CLEAR:
                         
                         break;
                     case QUIT:
@@ -108,13 +142,13 @@ class SockBaseServer extends Thread {
                 }
             }
         } catch (SocketException se) {
-            System.out.println("Client disconnected");
+            System.out.println("[DEBUG] Client disconnected");
         } catch (Exception ex) {
             Response error = error(0, "Unexpected server error: " + ex.getMessage());
             error.writeDelimitedTo(out);
         }
         finally {
-            System.out.println("Client ID " + id + " disconnected");
+            System.out.println("[DEBUG] Client ID " + id + " disconnected");
             this.inGame = false;
             exitAndClose(in, out, clientSocket);
         }
@@ -134,9 +168,10 @@ class SockBaseServer extends Thread {
         name = op.getName();
 
         writeToLog(name, Message.CONNECT);
+        checkForPlayer(name);
         currentState = 2;
 
-        System.out.println("Got a connection and a name: " + name);
+        System.out.println("[DEBUG] Got a connection and a name: " + name);
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.GREETING)
                 .setMessage("Hello " + name + " and welcome to a simple game of Sudoku.")
@@ -145,15 +180,73 @@ class SockBaseServer extends Thread {
                 .build();
     }
     
+    private void checkForPlayer(String name) {
+        Player client = new Player(name, 0, 1, 0);
+        
+        boolean found = false;
+        for(int i = 0; i < leaderboardList.length(); i++) {
+            JSONObject player = leaderboardList.getJSONObject(i);
+
+            // Update client if client is already on the leaderboard
+            if(player.getString("name").equals(client.getName())) {
+                found = true;
+                
+                client.setWins(player.getInt("wins"));
+                client.setLogins(player.getInt("logins"));
+                client.increaseLogin();
+                client.setPoints(player.getInt("points"));
+                System.out.println("[DEBUG] Found player in leaderboard");
+                
+                player.put("logins", client.getLogins());
+                
+                break;
+                
+            }
+        }
+        
+        if(!found) {
+            JSONObject newPlayer = new JSONObject();
+            newPlayer.put("name", client.getName());
+            newPlayer.put("wins", client.getWins());
+            newPlayer.put("logins", client.getLogins());
+            newPlayer.put("points", client.getPoints());
+            
+            leaderboardList.put(newPlayer);
+            
+        }
+        
+        try (FileWriter fw = new FileWriter(leaderFilename)) {
+            fw.write(leaderboardList.toString(4));
+            System.out.println("[DEBUG] Login successfully updated " + leaderFilename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        
+    }
+    
     private Response leaderRequest() throws IOException {
-        System.out.println("Got leaderboard request");
+        System.out.println("[DEBUG] Got leaderboard request");
         
-        currentState = 2;
+        Response.Builder newResponse = Response.newBuilder();
         
-        return Response.newBuilder()
+        for(int i = 0; i < leaderboardList.length(); i++) {
+            JSONObject playerJSON = leaderboardList.getJSONObject(i);
+            
+            Entry player = Entry.newBuilder()
+                    .setName(playerJSON.getString("name"))
+                    .setPoints(playerJSON.getInt("points"))
+                    .setLogins(playerJSON.getInt("logins"))
+                    .build();
+            
+            newResponse.addLeader(player);
+            
+        }
+        
+        return newResponse
                 .setResponseType(Response.ResponseType.LEADERBOARD)
                 .setMenuoptions(menuOptions)
-                .setNext(currentState)
+                .setNext(2)
                 .build();
     }
     
@@ -177,7 +270,6 @@ class SockBaseServer extends Thread {
                 .build();
     }
     
-    //TODO implement play request
     private Response playRequest(Request op) throws IOException {
         int row = op.getRow();
         int column = op.getColumn();
@@ -194,8 +286,19 @@ class SockBaseServer extends Thread {
         
         eval = game.updateBoard(row, column, value, 0);
         
-        if(game.getWon()) {
-            System.out.println("[DEBUG] won the game");
+        if (game.getWon()) {
+            JSONObject winner;
+            
+            for(int i = 0; i < leaderboardList.length(); i++) {
+                if(leaderboardList.getJSONObject(i).getString("name").equals(name)) {
+                    winner = leaderboardList.getJSONObject(i);
+                    winner.put("points", winner.getInt("points") + game.getPoints());
+                    winner.put("wins", winner.getInt("wins") + game.getPoints());
+                }
+                
+            }
+            
+            System.out.println("[DEBUG] Client " + id + "Won the game");
             response = Response.newBuilder()
                     .setResponseType(Response.ResponseType.WON)
                     .setBoard(game.getDisplayBoard())
@@ -204,6 +307,8 @@ class SockBaseServer extends Thread {
                     .setMessage("You solved the current puzzle, good job!")
                     .setPoints(game.getPoints())
                     .setNext(2);
+            
+            game.setPoints(-game.getPoints());
         }
         else {
             if(eval == 0) {

@@ -12,19 +12,39 @@ import java.util.stream.Collectors;
 
 public class Player implements Comparable<Player> {
 
-    private final int wins;
+    private int wins;
     private final String name;
+    private int logins;
+    private int points;
 
     // constructor, getters, setters
-    public Player(String name, int wins){
+    public Player(String name, int wins, int logins, int points){
       this.wins = wins;
       this.name = name;
+      this.logins = logins;
+      this.points = points;
     }
 
     public int getWins(){
       return wins;
     }
-
+    public void setWins(int wins){this.wins = wins;}
+    public void increaseWin() {wins++;}
+    
+    public String getName() {return name;}
+    
+    public int getLogins() {return logins;}
+    public void setLogins(int logins) {this.logins = logins;}
+    public void increaseLogin() {this.logins++;}
+    
+    public int getPoints() {
+        return points;
+    }
+    
+    public void setPoints(int points) {
+        this.points = points;
+    }
+    
     // override equals and hashCode
     @Override
     public int compareTo(Player player) {

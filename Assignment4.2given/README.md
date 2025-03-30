@@ -30,8 +30,43 @@ Now you can run the client and server, please follow these instructions to start
 
 ## Screencast
 
+
 # Readme checklist:
 
 
 # Requirements (If checked off then completed and includes debugging)
-- 
+- [x] Run through gradle
+- [ ] Implement given protocol
+  - [x] Logging in
+    - [x] CL RequestType NAME
+    - [X] SV ResponseType GREETINGS
+  - [x] View Leader Board (Main Menu)
+    - [x] CL RequestType LEADERBOARD
+    - [x] SV ResponseType LEADERBOARD
+  - [x] Play Game (Main Menu)
+    - [x] CL RequestType START
+    - [x] SV ResponseType START
+  - [x] Playing game
+    - [X] CL RequestType UPDATE
+    - [x] SV ResponseType PLAY (If game is not yet won)
+    - [x] SV ResponseType WON (If game is won)
+  - [ ] Clear Request (Playing game)
+    - [ ] CL RequestType CLEAR
+      - At an index
+      - at a row
+      - at a column
+      - grid
+      - board to original
+      - new board
+    - [ ] SV ResponseType PLAY
+  - [x] Quit game
+    - [x] CL RequestTyp QUIT
+    - [x] SV ResponseType BYE
+- [x] Gradle runServerGrading will always give the grading board
+- [x] Game can handle multiple clients. Different game, but same leaderboard
+- [ ] Thread safe
+- [x] Leaderboard persists even if the server crashes
+- [x] plus 20 points for winning
+- [x] When the guess is any of the DUP_ or PRESET_VALUE negative 2 points
+- [ ] Any clear operation is negative 5 points
+- [ ] Add error checks
