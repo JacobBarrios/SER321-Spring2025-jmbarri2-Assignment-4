@@ -123,6 +123,7 @@ class SockBaseServer extends Thread {
                         
                         break;
                     case CLEAR:
+                        response = clearRequest(op);
                         
                         break;
                     case QUIT:
@@ -192,12 +193,12 @@ class SockBaseServer extends Thread {
                 found = true;
                 
                 client.setWins(player.getInt("wins"));
+                
                 client.setLogins(player.getInt("logins"));
                 client.increaseLogin();
-                client.setPoints(player.getInt("points"));
-                System.out.println("[DEBUG] Found player in leaderboard");
-                
                 player.put("logins", client.getLogins());
+                
+                System.out.println("[DEBUG] Found player in leaderboard");
                 
                 break;
                 
@@ -288,6 +289,7 @@ class SockBaseServer extends Thread {
         
         if (game.getWon()) {
             JSONObject winner;
+            game.setPoints(20);
             
             for(int i = 0; i < leaderboardList.length(); i++) {
                 if(leaderboardList.getJSONObject(i).getString("name").equals(name)) {
@@ -312,7 +314,6 @@ class SockBaseServer extends Thread {
         }
         else {
             if(eval == 0) {
-                game.setPoints(20);
                 System.out.println("[DEBUG] Valid move");
                 
                 response =  Response.newBuilder()
@@ -376,6 +377,51 @@ class SockBaseServer extends Thread {
         
         return response.build();
         
+    }
+    
+    private Response clearRequest(Request op) throws IOException {
+        int row = op.getRow();
+        int column = op.getColumn();
+        int value = op.getValue();
+        
+        Response.EvalType evalType = Response.EvalType.CLEAR_VALUE;
+        
+        game.updateBoard(row, column, 0, value);
+        game.setPoints(-5);
+        
+        if(value == 1) {
+            evalType = Response.EvalType.CLEAR_VALUE;
+            
+        }
+        else if(value == 2) {
+            evalType = Response.EvalType.CLEAR_ROW;
+            
+        }
+        else if(value == 3) {
+            evalType = Response.EvalType.CLEAR_COL;
+            
+        }
+        else if(value == 4) {
+            evalType = Response.EvalType.CLEAR_GRID;
+            
+        }
+        else if(value == 5) {
+            evalType = Response.EvalType.CLEAR_BOARD;
+            
+        }
+        else if(value == 6) {
+            evalType = Response.EvalType.RESET_BOARD;
+            
+        }
+        
+        return response = Response.newBuilder()
+                .setResponseType(Response.ResponseType.PLAY)
+                .setBoard(game.getDisplayBoard())
+                .setPoints(game.getPoints())
+                .setMenuoptions(gameOptions)
+                .setNext(3)
+                .setType(evalType)
+                .build();
     }
 
     /**

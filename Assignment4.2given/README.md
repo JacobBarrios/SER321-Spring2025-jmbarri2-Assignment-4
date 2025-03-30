@@ -36,7 +36,7 @@ Now you can run the client and server, please follow these instructions to start
 
 # Requirements (If checked off then completed and includes debugging)
 - [x] Run through gradle
-- [ ] Implement given protocol
+- [x] Implement given protocol
   - [x] Logging in
     - [x] CL RequestType NAME
     - [X] SV ResponseType GREETINGS
@@ -50,15 +50,15 @@ Now you can run the client and server, please follow these instructions to start
     - [X] CL RequestType UPDATE
     - [x] SV ResponseType PLAY (If game is not yet won)
     - [x] SV ResponseType WON (If game is won)
-  - [ ] Clear Request (Playing game)
-    - [ ] CL RequestType CLEAR
+  - [x] Clear Request (Playing game)
+    - [x] CL RequestType CLEAR
       - At an index
       - at a row
       - at a column
       - grid
       - board to original
       - new board
-    - [ ] SV ResponseType PLAY
+    - [x] SV ResponseType PLAY
   - [x] Quit game
     - [x] CL RequestTyp QUIT
     - [x] SV ResponseType BYE
@@ -68,5 +68,5 @@ Now you can run the client and server, please follow these instructions to start
 - [x] Leaderboard persists even if the server crashes
 - [x] plus 20 points for winning
 - [x] When the guess is any of the DUP_ or PRESET_VALUE negative 2 points
-- [ ] Any clear operation is negative 5 points
+- [x] Any clear operation is negative 5 points
 - [ ] Add error checks

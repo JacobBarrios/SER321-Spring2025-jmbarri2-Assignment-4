@@ -221,10 +221,49 @@ class SockBaseClient {
 					System.out.println("[DEBUG] Clear board");
 					try {
 						int[] coordinates = boardSelectionClear();
-						req.setOperationType(Request.OperationType.CLEAR)
-								.setRow(coordinates[0])
-								.setColumn(coordinates[1])
-								.setValue(coordinates[2]);
+      
+						if(coordinates[2] == 1) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(coordinates[0] - 1)
+                                    .setColumn(coordinates[1] - 1)
+                                    .setValue(coordinates[2]);
+                            
+                        }
+                        else if(coordinates[2] == 2) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(coordinates[0] - 1)
+                                    .setColumn(-1)
+                                    .setValue(coordinates[2]);
+                            
+                        }
+                        else if(coordinates[2] == 3) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(-1)
+                                    .setColumn(coordinates[1] - 1)
+                                    .setValue(coordinates[2]);
+                            
+                        }
+                        else if(coordinates[2] == 4) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(coordinates[0])
+                                    .setColumn(coordinates[1])
+                                    .setValue(coordinates[2]);
+                            
+                        }
+                        else if(coordinates[2] == 5) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(-1)
+                                    .setColumn(-1)
+                                    .setValue(coordinates[2]);
+                            
+                        }
+                        else if(coordinates[2] == 6) {
+                            req.setOperationType(Request.OperationType.CLEAR)
+                                    .setRow(-1)
+                                    .setColumn(-1)
+                                    .setValue(coordinates[2]);
+                            
+                        }
 					}
 					catch(Exception ex) {
 						throw new RuntimeException(ex);
@@ -268,10 +307,28 @@ class SockBaseClient {
             System.out.println("Number exists in row");
         }
         else if(response.getType() == Response.EvalType.DUP_COL) {
-            System.out.println("Number exists in row");
+            System.out.println("Number exists in column");
         }
         else if(response.getType() == Response.EvalType.DUP_GRID) {
             System.out.println("Number exists in grid");
+        }
+        else if(response.getType() == Response.EvalType.CLEAR_VALUE) {
+            System.out.println("Cleared selected value");
+        }
+        else if(response.getType() == Response.EvalType.CLEAR_ROW) {
+            System.out.println("Cleared row");
+        }
+        else if(response.getType() == Response.EvalType.CLEAR_COL) {
+            System.out.println("Cleared column");
+        }
+        else if(response.getType() == Response.EvalType.CLEAR_GRID) {
+            System.out.println("Cleared grid");
+        }
+        else if(response.getType() == Response.EvalType.CLEAR_BOARD) {
+            System.out.println("Cleared board");
+        }
+        else if(response.getType() == Response.EvalType.RESET_BOARD) {
+            System.out.println("Reset board");
         }
         
         System.out.println("Current points: " + response.getPoints());

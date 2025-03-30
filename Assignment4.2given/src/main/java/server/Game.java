@@ -246,10 +246,31 @@ public class Game {
             }
         } else if (type == 4) {
             // clear grid back to original
-            int startRow = (row / 3) * 3;
-            int startCol = (column / 3) * 3;
+            int startRow = 0;
+            int startCol = 0;
+            
+            if(row == 2 || row == 5 || row == 8) {
+                startCol = 3;
+            }
+            else if(row == 3 || row == 6 || row == 9) {
+                startCol = 6;
+            }
+            
+            if(row == 4 || row == 5 || row == 6) {
+                startRow = 3;
+            }
+            else if(row == 7 || row == 8 || row == 9) {
+                startRow = 6;
+            }
 
+            System.out.println("[DEBUG] grid to clear");
             for (int i = startRow; i < startRow + 3; i++) {
+                for(int j = startCol; j < startCol + 3; j++) {
+                    System.out.print(referenceBoard[i][j]);
+                    
+                }
+                System.out.println();
+                
                 System.arraycopy(referenceBoard[i], startCol, playerBoard[i], startCol, startCol + 3 - startCol);
             }
         } else if (type == 5) {
