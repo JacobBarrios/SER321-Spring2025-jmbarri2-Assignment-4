@@ -4,3 +4,6 @@ build/
 *.class
 .idea
 .gradle/
+
+leaderboard.json
+logs.txt
