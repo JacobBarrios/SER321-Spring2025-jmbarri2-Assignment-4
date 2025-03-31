@@ -105,7 +105,8 @@ class SockBaseServer extends Thread {
                 switch (op.getOperationType()) {
                     case NAME:
                         if (op.getName().isBlank()) {
-                            response = error(1, "name");
+                            System.out.println("[DEBUG] Empty name");
+                            response = error(1);
                         } else {
                             response = nameRequest(op);
                         }
@@ -116,8 +117,14 @@ class SockBaseServer extends Thread {
                         
                         break;
                     case START:
-                        response = startRequest(op);
-
+                        if(op.getDifficulty() < 1 || op.getDifficulty() > 20) {
+                            System.out.println("[DEBUG] Difficulty out of bounds");
+                            response = error(5);
+                        }
+                        else {
+                            response = startRequest(op);
+                        }
+                        
                         break;
                     case UPDATE:
                         response = updateRequest(op);
@@ -133,10 +140,10 @@ class SockBaseServer extends Thread {
                         
                         break;
                     default:
-                        response = error(2, op.getOperationType().name());
+                        response = error(2);
                         break;
                 }
-                
+                System.out.println("[DEBUG] response to send" + response.toString());
                 response.writeDelimitedTo(out);
 
                 if (quit) {
@@ -146,7 +153,7 @@ class SockBaseServer extends Thread {
         } catch (SocketException se) {
             System.out.println("[DEBUG] Client disconnected");
         } catch (Exception ex) {
-            Response error = error(0, "Unexpected server error: " + ex.getMessage());
+            Response error = error(0);
             error.writeDelimitedTo(out);
         }
         finally {
@@ -168,17 +175,17 @@ class SockBaseServer extends Thread {
      */
     private Response nameRequest(Request op) {
         name = op.getName();
+        currentState = 2;
 
         writeToLog(name, Message.CONNECT);
         checkForPlayer(name);
-        currentState = 2;
 
         System.out.println("[DEBUG] Got a connection and a name: " + name);
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.GREETING)
                 .setMessage("Hello " + name + " and welcome to a simple game of Sudoku.")
                 .setMenuoptions(menuOptions)
-                .setNext(currentState)
+                .setNext(2)
                 .build();
     }
     
@@ -270,7 +277,7 @@ class SockBaseServer extends Thread {
         return newResponse
                 .setResponseType(Response.ResponseType.LEADERBOARD)
                 .setMenuoptions(menuOptions)
-                .setNext(2)
+                .setNext(currentState)
                 .build();
     }
     
@@ -279,7 +286,8 @@ class SockBaseServer extends Thread {
      */
     private Response startRequest(Request op) {
         System.out.println("[DEBUG] start request");
-
+        
+        currentState = 3;
         game.newGame(grading, op.getDifficulty()); // difficulty should be read from request!
 
         System.out.println("[DEBUG] Player Board: \n" + game.getDisplayBoard());
@@ -288,9 +296,9 @@ class SockBaseServer extends Thread {
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.START)
                 .setBoard(game.getDisplayBoard())
-                .setMessage("\n")
+                .setMessage("\nStarting new game.")
                 .setMenuoptions(gameOptions)
-                .setNext(3)
+                .setNext(currentState)
                 .build();
     }
     
@@ -301,6 +309,10 @@ class SockBaseServer extends Thread {
      * @return Response with the evaluation of the move from the client
      */
     private Response updateRequest(Request op) {
+        System.out.println("[DEBUG] Request has col: " + op.hasColumn());
+        System.out.println("[DEBUG] Request has row: " + op.hasRow());
+        System.out.println("[DEBUG] Request has value: " + op.hasValue());
+        
         int row = op.getRow();
         int column = op.getColumn();
         int value = op.getValue();
@@ -332,6 +344,7 @@ class SockBaseServer extends Thread {
             updateLeaderboardFile();
             
             System.out.println("[DEBUG] Client " + id + "Won the game");
+            currentState = 2;
             response = Response.newBuilder()
                     .setResponseType(Response.ResponseType.WON)
                     .setBoard(game.getDisplayBoard())
@@ -339,12 +352,13 @@ class SockBaseServer extends Thread {
                     .setMenuoptions(menuOptions)
                     .setMessage("You solved the current puzzle, good job!")
                     .setPoints(game.getPoints())
-                    .setNext(2);
+                    .setNext(currentState);
             
             game.setPoints(-game.getPoints());
         }
         else {
             Response.EvalType evalType = Response.EvalType.UPDATE;
+            currentState = 3;
             
             if(eval == 0) {
                 System.out.println("[DEBUG] Valid move");
@@ -376,7 +390,7 @@ class SockBaseServer extends Thread {
                     .setPoints(game.getPoints())
                     .setMenuoptions(gameOptions)
                     .setType(evalType)
-                    .setNext(3);
+                    .setNext(currentState);
             
         }
         
@@ -399,6 +413,7 @@ class SockBaseServer extends Thread {
         
         game.updateBoard(row, column, 0, value);
         game.setPoints(-5);
+        currentState = 3;
         
         if(value == 1) {
             evalType = Response.EvalType.CLEAR_VALUE;
@@ -431,7 +446,7 @@ class SockBaseServer extends Thread {
                 .setBoard(game.getDisplayBoard())
                 .setPoints(game.getPoints())
                 .setMenuoptions(gameOptions)
-                .setNext(3)
+                .setNext(currentState)
                 .setType(evalType)
                 .build();
     }
@@ -451,30 +466,65 @@ class SockBaseServer extends Thread {
      * Start of handling errors, not fully done
      * @return Request.Builder holding the response back to Client as specified in Protocol
      */
-    private Response error(int err, String field) {
+    private Response error(int err) {
+        System.out.println("[DEBUG] Writing error");
         String message;
         int type = err;
         Response.Builder response = Response.newBuilder();
 
-        switch (err) {
+        switch (type) {
             case 1:
+                System.out.println("[DEBUG] Writing required field missing or empty error");
                 message = "\nError: required field missing or empty";
+                
                 break;
             case 2:
+                System.out.println("[DEBUG] Writing request not supported error");
                 message = "\nError: request not supported";
+                
+                break;
+            case 3:
+                System.out.println("[DEBUG] Row or col out of bounds error");
+                message = "\nError: row or col out of bounds";
+                
+                break;
+            case 4:
+                System.out.println("[DEBUG] Writing request is not expected yet error");
+                message = "\nError: request is not expected at this point";
+                
+                break;
+            case 5:
+                System.out.println("[DEBUG] Writing difficulty out of range error");
+                message = "\nError: difficulty is out of range";
+                
                 break;
             default:
+                System.out.println("[DEBUG] Writing cannot process request error");
                 message = "\nError: cannot process your request";
                 type = 0;
                 break;
         }
 
-        response
-                .setResponseType(Response.ResponseType.ERROR)
-                .setErrorType(type)
-                .setMessage(message)
-                .setNext(currentState)
-                .build();
+        if(currentState == 1) {
+            response.setResponseType(Response.ResponseType.ERROR)
+                    .setMessage(message)
+                    .setErrorType(type)
+                    .setNext(1);        }
+        else if(currentState == 2) {
+            response.setResponseType(Response.ResponseType.ERROR)
+                    .setMessage(message)
+                    .setErrorType(type)
+                    .setMenuoptions(menuOptions)
+                    .setNext(2);
+        }
+        else if(currentState == 3) {
+            response.setResponseType(Response.ResponseType.ERROR)
+                    .setMessage(message)
+                    .setErrorType(type)
+                    .setBoard(game.getDisplayBoard())
+                    .setMenuoptions(gameOptions)
+                    .setNext(3);
+        }
 
         return response.build();
     }

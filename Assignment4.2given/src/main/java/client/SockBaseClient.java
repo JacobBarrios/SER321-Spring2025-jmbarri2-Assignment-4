@@ -94,8 +94,18 @@ class SockBaseClient {
                         // Server sent an error
                         System.out.println("Error: " + response.getMessage() + "Type: " + response.getErrorType());
                         if (response.getNext() == 1) {
+                            System.out.println("[DEBUG] Error next: 1");
                             req = nameRequest();
-                        } else {
+                        }
+                        else if(response.getNext() == 2) {
+                            System.out.println("[DEBUG] Error next: 2");
+                            req = chooseMenuRequest(req, response);
+                        }
+                        else if(response.getNext() == 3) {
+                            System.out.println("[DEBUG] Error next: 3");
+                            req = chooseInGameMenuRequest(req, response);
+                        }
+                        else {
                             System.out.println("That error type is not handled yet");
                             req = nameRequest();
                         }
@@ -169,24 +179,10 @@ class SockBaseClient {
     static int getDifficulty() throws IOException {
         System.out.println("Please provide difficulty level (1-20) for the game.");
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-        int difficultyToSend = 1; // Default value
-        boolean selecting = true;
+        int difficultyToSend;
         
-        while (selecting) {
-            try {
-                String stringDifficulty = stdin.readLine();
-                difficultyToSend = Integer.parseInt(stringDifficulty);
-                
-                if (difficultyToSend < 1 || difficultyToSend > 20) {
-                    System.out.println("Please enter a difficulty between 1 and 20.");
-                } else {
-                    selecting = false;
-                }
-            }
-            catch (NumberFormatException e) {
-                System.out.println("Invalid input. Difficulty should be an integer.");
-            }
-        }
+        String stringDifficulty = stdin.readLine();
+        difficultyToSend = Integer.parseInt(stringDifficulty);
         
         return difficultyToSend;
     }

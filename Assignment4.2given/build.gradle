@@ -76,11 +76,11 @@ task runServer(type: JavaExec) {
     args false
 }
 
-//gradle runServer -Pport=8080
+//gradle runServerGrading -Pport=8080
 task runServerGrading(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     description = "Run Server"
-    main = 'server.SockBaseServer'
+    main = 'server.ServerMain'
     // default args
     args port
     args true
