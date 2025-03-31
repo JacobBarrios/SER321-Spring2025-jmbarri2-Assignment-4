@@ -13,6 +13,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,20 +32,20 @@ class SockBaseServer extends Thread {
     
     InputStream in = null;
     OutputStream out = null;
-    Socket clientSocket = null;
+    Socket clientSocket;
     private final int id; // client id
     Response response;
 
     Game game; // current game
 
-    private boolean inGame = false; // a game was started (you can decide if you want this
     private String name; // player name
     private JSONArray leaderboardList;
 
-    private int currentState = 1; // I used something like this to keep track of where I am in the game, you can decide if you want that as well
-
+    private final Lock mutex = new ReentrantLock();
+    
+    private int currentState = 1;
     private static boolean grading = true; // if the grading board should be used
-
+    
     public SockBaseServer(Socket sock, Game game, int id, boolean grading) {
         this.clientSocket = sock;
         this.game = game;
@@ -55,7 +58,6 @@ class SockBaseServer extends Thread {
             System.out.println("Error in constructor: " + e);
         }
     }
-    
     public void run() {
 		try {
 			startGame();
@@ -80,7 +82,7 @@ class SockBaseServer extends Thread {
                 // Create a sample empty JSONArray and write it to the file
                 JSONArray emptyArray = new JSONArray();
                 Files.write(leaderJSONPath, emptyArray.toString().getBytes());
-                System.out.println("[DEBUG] Empty array: " + emptyArray.toString());
+                System.out.println("[DEBUG] Empty array: " + emptyArray);
                 System.out.println("[DEBUG] Initialized empty JSON array in the file.");
             }
             catch (IOException e) {
@@ -100,7 +102,6 @@ class SockBaseServer extends Thread {
 
                 boolean quit = false;
 
-                // should handle all the other request types here, my advice is to put them in methods similar to nameRequest()
                 switch (op.getOperationType()) {
                     case NAME:
                         if (op.getName().isBlank()) {
@@ -119,7 +120,7 @@ class SockBaseServer extends Thread {
 
                         break;
                     case UPDATE:
-                        response = playRequest(op);
+                        response = updateRequest(op);
                         
                         break;
                     case CLEAR:
@@ -150,12 +151,12 @@ class SockBaseServer extends Thread {
         }
         finally {
             System.out.println("[DEBUG] Client ID " + id + " disconnected");
-            this.inGame = false;
             exitAndClose(in, out, clientSocket);
         }
     }
 
     void exitAndClose(InputStream in, OutputStream out, Socket serverSock) throws IOException {
+        updateLeaderboardFile();
         if (in != null)   in.close();
         if (out != null)  out.close();
         if (serverSock != null) serverSock.close();
@@ -163,9 +164,9 @@ class SockBaseServer extends Thread {
 
     /**
      * Handles the name request and returns the appropriate response
-     * @return Request.Builder holding the reponse back to Client as specified in Protocol
+     * @return Request.Builder holding the response back to Client as specified in Protocol
      */
-    private Response nameRequest(Request op) throws IOException {
+    private Response nameRequest(Request op) {
         name = op.getName();
 
         writeToLog(name, Message.CONNECT);
@@ -181,6 +182,11 @@ class SockBaseServer extends Thread {
                 .build();
     }
     
+    /**
+     * Check if the current client is already on the leaderboard
+     *
+     * @param name Name of the client playing
+     */
     private void checkForPlayer(String name) {
         Player client = new Player(name, 0, 1, 0);
         
@@ -216,17 +222,34 @@ class SockBaseServer extends Thread {
             
         }
         
-        try (FileWriter fw = new FileWriter(leaderFilename)) {
-            fw.write(leaderboardList.toString(4));
-            System.out.println("[DEBUG] Login successfully updated " + leaderFilename);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        updateLeaderboardFile();
         
         
     }
     
-    private Response leaderRequest() throws IOException {
+    /**
+     * Method to update leaderboard.json file with the leaderboardList JSONArray
+     */
+    private void updateLeaderboardFile() {
+        mutex.lock();
+        
+        try (FileWriter file = new FileWriter(leaderFilename)) {
+            file.write(leaderboardList.toString(4));
+            System.out.println("[DEBUG] Leaderboard updated in file");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
+            mutex.unlock();
+        }
+    }
+    
+    /**
+     * Method that will send the leaderboard to the client
+     *
+     * @return Response for the client with the leaderboard
+     */
+    private Response leaderRequest() {
         System.out.println("[DEBUG] Got leaderboard request");
         
         Response.Builder newResponse = Response.newBuilder();
@@ -252,9 +275,9 @@ class SockBaseServer extends Thread {
     }
     
     /**
-     * Starts to handle start of a game after START request, is not complete of course, just shows how to get to the board
+     * Starts to handle start of a game after START request
      */
-    private Response startRequest(Request op) throws IOException {
+    private Response startRequest(Request op) {
         System.out.println("[DEBUG] start request");
 
         game.newGame(grading, op.getDifficulty()); // difficulty should be read from request!
@@ -271,12 +294,18 @@ class SockBaseServer extends Thread {
                 .build();
     }
     
-    private Response playRequest(Request op) throws IOException {
+    /**
+     * Method that evaluates the move from the client and sends the result
+     *
+     * @param op Request from the client to get the move to evaluate
+     * @return Response with the evaluation of the move from the client
+     */
+    private Response updateRequest(Request op) {
         int row = op.getRow();
         int column = op.getColumn();
         int value = op.getValue();
         int eval;
-        Response.Builder response = Response.newBuilder();
+        Response.Builder response;
         
         System.out.println("[DEBUG] play request");
         System.out.println("[DEBUG] Row: " + row);
@@ -294,11 +323,13 @@ class SockBaseServer extends Thread {
             for(int i = 0; i < leaderboardList.length(); i++) {
                 if(leaderboardList.getJSONObject(i).getString("name").equals(name)) {
                     winner = leaderboardList.getJSONObject(i);
-                    winner.put("points", winner.getInt("points") + game.getPoints());
+                    winner.put("points", game.getPoints());
                     winner.put("wins", winner.getInt("wins") + game.getPoints());
                 }
                 
             }
+            
+            updateLeaderboardFile();
             
             System.out.println("[DEBUG] Client " + id + "Won the game");
             response = Response.newBuilder()
@@ -313,65 +344,39 @@ class SockBaseServer extends Thread {
             game.setPoints(-game.getPoints());
         }
         else {
+            Response.EvalType evalType = Response.EvalType.UPDATE;
+            
             if(eval == 0) {
                 System.out.println("[DEBUG] Valid move");
-                
-                response =  Response.newBuilder()
-                        .setResponseType(Response.ResponseType.PLAY)
-                        .setBoard(game.getDisplayBoard())
-                        .setType(Response.EvalType.UPDATE)
-                        .setMenuoptions(gameOptions)
-                        .setPoints(game.getPoints())
-                        .setNext(3);
             }
             else if(eval == 1) {
                 game.setPoints(-2);
                 System.out.println("[DEBUG] Can't fill with number");
-                
-                response = Response.newBuilder()
-                        .setResponseType(Response.ResponseType.PLAY)
-                        .setBoard(game.getDisplayBoard())
-                        .setType(Response.EvalType.PRESET_VALUE)
-                        .setMenuoptions(gameOptions)
-                        .setPoints(game.getPoints())
-                        .setNext(3);
+                evalType = Response.EvalType.PRESET_VALUE;
             }
             else if(eval == 2) {
                 game.setPoints(-2);
                 System.out.println("[DEBUG] Duplicate row");
-                
-                response = Response.newBuilder()
-                        .setResponseType(Response.ResponseType.PLAY)
-                        .setBoard(game.getDisplayBoard())
-                        .setPoints(game.getPoints())
-                        .setMenuoptions(gameOptions)
-                        .setType(Response.EvalType.DUP_ROW)
-                        .setNext(3);
+                evalType = Response.EvalType.DUP_ROW;
             }
             else if(eval == 3) {
                 game.setPoints(-2);
                 System.out.println("[DEBUG] Duplicate column");
-                
-                response = Response.newBuilder()
-                        .setResponseType(Response.ResponseType.PLAY)
-                        .setBoard(game.getDisplayBoard())
-                        .setPoints(game.getPoints())
-                        .setMenuoptions(gameOptions)
-                        .setType(Response.EvalType.DUP_COL)
-                        .setNext(3);
+                evalType = Response.EvalType.DUP_COL;
             }
             else if(eval == 4) {
                 game.setPoints(-2);
                 System.out.println("[DEBUG] Duplicate grid");
-                
-                response = Response.newBuilder()
-                        .setResponseType(Response.ResponseType.PLAY)
-                        .setBoard(game.getDisplayBoard())
-                        .setPoints(game.getPoints())
-                        .setMenuoptions(gameOptions)
-                        .setType(Response.EvalType.DUP_GRID)
-                        .setNext(3);
+                evalType = Response.EvalType.DUP_GRID;
             }
+            
+            response = Response.newBuilder()
+                    .setResponseType(Response.ResponseType.PLAY)
+                    .setBoard(game.getDisplayBoard())
+                    .setPoints(game.getPoints())
+                    .setMenuoptions(gameOptions)
+                    .setType(evalType)
+                    .setNext(3);
             
         }
         
@@ -379,7 +384,13 @@ class SockBaseServer extends Thread {
         
     }
     
-    private Response clearRequest(Request op) throws IOException {
+    /**
+     * Method to create the response with the result of the clear request
+     *
+     * @param op Request from the client
+     * @return Response to send to the client
+     */
+    private Response clearRequest(Request op) {
         int row = op.getRow();
         int column = op.getColumn();
         int value = op.getValue();
@@ -411,6 +422,7 @@ class SockBaseServer extends Thread {
         }
         else if(value == 6) {
             evalType = Response.EvalType.RESET_BOARD;
+            game.newBoard(grading);
             
         }
         
@@ -426,10 +438,9 @@ class SockBaseServer extends Thread {
 
     /**
      * Handles the quit request, might need adaptation
-     * @return Request.Builder holding the reponse back to Client as specified in Protocol
+     * @return Request.Builder holding the response back to Client as specified in Protocol
      */
-    private Response quit() throws IOException {
-        this.inGame = false;
+    private Response quit() {
         return Response.newBuilder()
                 .setResponseType(Response.ResponseType.BYE)
                 .setMessage("Thank you for playing! goodbye.")
@@ -438,10 +449,10 @@ class SockBaseServer extends Thread {
 
     /**
      * Start of handling errors, not fully done
-     * @return Request.Builder holding the reponse back to Client as specified in Protocol
+     * @return Request.Builder holding the response back to Client as specified in Protocol
      */
-    private Response error(int err, String field) throws IOException {
-        String message = "";
+    private Response error(int err, String field) {
+        String message;
         int type = err;
         Response.Builder response = Response.newBuilder();
 
@@ -472,7 +483,6 @@ class SockBaseServer extends Thread {
      * Writing a new entry to our log
      * @param name - Name of the person logging in
      * @param message - type Message from Protobuf which is the message to be written in the log (e.g. Connect) 
-     * @return String of the new hidden image
      */
     public void writeToLog(String name, Message message) {
         try {
@@ -513,14 +523,14 @@ class SockBaseServer extends Thread {
 }
 
 class ServerMain {
-    public static void main (String[] args) throws Exception {
+    public static void main (String[] args) {
         if (args.length != 2) {
             System.out.println("Expected arguments: <port(int)> <delay(int)>");
             System.exit(1);
         }
         int port = 8080; // default port
         boolean grading = Boolean.parseBoolean(args[1]);
-        Socket clientSocket = null;
+        Socket clientSocket;
         ServerSocket socket = null;
         
         try {

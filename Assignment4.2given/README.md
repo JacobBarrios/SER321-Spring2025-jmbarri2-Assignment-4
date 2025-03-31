@@ -52,21 +52,21 @@ Now you can run the client and server, please follow these instructions to start
     - [x] SV ResponseType WON (If game is won)
   - [x] Clear Request (Playing game)
     - [x] CL RequestType CLEAR
-      - At an index
-      - at a row
-      - at a column
-      - grid
-      - board to original
-      - new board
+      - [x] At an index
+      - [x] at a row
+      - [x] at a column
+      - [x] grid
+      - [x] board to original
+      - [x] new board
     - [x] SV ResponseType PLAY
   - [x] Quit game
     - [x] CL RequestTyp QUIT
     - [x] SV ResponseType BYE
 - [x] Gradle runServerGrading will always give the grading board
 - [x] Game can handle multiple clients. Different game, but same leaderboard
-- [ ] Thread safe
+- [x] Thread safe
 - [x] Leaderboard persists even if the server crashes
 - [x] plus 20 points for winning
 - [x] When the guess is any of the DUP_ or PRESET_VALUE negative 2 points
 - [x] Any clear operation is negative 5 points
-- [ ] Add error checks
+- [x] Add error checks

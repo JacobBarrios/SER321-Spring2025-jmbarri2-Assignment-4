@@ -7,7 +7,7 @@ import java.util.*;
  * Class can be used to hold the persistent state for a game for different threads
  * synchronization is not taken care of .
  * You can change this Class in any way you like or decide to not use it at all
- * I used this class in my SockBaseServer to create a new game and keep track of the current image evenon differnt threads. 
+ * I used this class in my SockBaseServer to create a new game and keep track of the current image even on different threads.
  * My threads each get a reference to this Game
  */
 
@@ -293,7 +293,7 @@ public class Game {
     }
 
     /**
-     * I never called this separatly from server
+     * I never called this separately from server
      * Checks if the move was valid for setting a number used in previous method
      */
     public int checkMove(int row, int col){

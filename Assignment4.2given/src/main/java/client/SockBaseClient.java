@@ -11,7 +11,6 @@ class SockBaseClient {
         Socket serverSock = null;
         OutputStream out = null;
         InputStream in = null;
-        int i1=0, i2=0;
         int port = 8080; // default port
 
         // Make sure two arguments are given
@@ -133,7 +132,7 @@ class SockBaseClient {
     static Request.Builder chooseMenuRequest(Request.Builder req, Response response) throws IOException {
         while (true) {
             System.out.println(response.getMenuoptions());
-            System.out.print("Enter a number 1-3: ");
+            System.out.println("Enter a number 1-3: ");
             
             BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
             String menu_select = stdin.readLine();
@@ -161,6 +160,12 @@ class SockBaseClient {
         }
     }
     
+    /**
+     * Method that will ask what difficulty the client wants
+     *
+     * @return Difficulty of new sudoku game
+     * @throws IOException If client didn't enter an int for difficulty
+     */
     static int getDifficulty() throws IOException {
         System.out.println("Please provide difficulty level (1-20) for the game.");
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
@@ -177,7 +182,8 @@ class SockBaseClient {
                 } else {
                     selecting = false;
                 }
-            } catch (NumberFormatException e) {
+            }
+            catch (NumberFormatException e) {
                 System.out.println("Invalid input. Difficulty should be an integer.");
             }
         }
@@ -185,10 +191,18 @@ class SockBaseClient {
         return difficultyToSend;
     }
     
+    /**
+     * Method that will ask to choose an in game menu option
+     *
+     * @param req Request to the server
+     * @param response Response from the server
+     * @return The request with the client's menu selection to the server
+     * @throws IOException If client didn't input the correct data type
+     */
     static Request.Builder chooseInGameMenuRequest(Request.Builder req, Response response) throws IOException {
-        int row;
-        int column;
-        int value;
+        int row = 0;
+        int column = 0;
+        int value = 0;
         
         System.out.println(response.getBoard());
         System.out.println(response.getMenuoptions());
@@ -198,16 +212,16 @@ class SockBaseClient {
         System.out.println("[DEBUG] Selected: " + menu_select);
         
         try {
-            // Insert row
-            row = Integer.parseInt(menu_select);
-            
-            // Insert column
-            System.out.println("Enter column (1-9)");
-            column = Integer.parseInt(stdin.readLine());
-            
-            // Insert value
-            System.out.printf("What value do you want to insert at row: %d, column: %d?\n", row, column);
-            value = Integer.parseInt(stdin.readLine());
+                // Insert row
+                row = Integer.parseInt(menu_select);
+                
+                // Insert column
+                System.out.println("Enter column (1-9)");
+                column = Integer.parseInt(stdin.readLine());
+                
+                // Insert value
+                System.out.printf("What value do you want to insert at row: %d, column: %d?\n", row, column);
+                value = Integer.parseInt(stdin.readLine());
             
             req.setOperationType(Request.OperationType.UPDATE)
                     .setRow(row - 1)
@@ -218,56 +232,7 @@ class SockBaseClient {
 			switch(menu_select) {
                 // If you want to clear
                 case "c":
-					System.out.println("[DEBUG] Clear board");
-					try {
-						int[] coordinates = boardSelectionClear();
-      
-						if(coordinates[2] == 1) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(coordinates[0] - 1)
-                                    .setColumn(coordinates[1] - 1)
-                                    .setValue(coordinates[2]);
-                            
-                        }
-                        else if(coordinates[2] == 2) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(coordinates[0] - 1)
-                                    .setColumn(-1)
-                                    .setValue(coordinates[2]);
-                            
-                        }
-                        else if(coordinates[2] == 3) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(-1)
-                                    .setColumn(coordinates[1] - 1)
-                                    .setValue(coordinates[2]);
-                            
-                        }
-                        else if(coordinates[2] == 4) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(coordinates[0])
-                                    .setColumn(coordinates[1])
-                                    .setValue(coordinates[2]);
-                            
-                        }
-                        else if(coordinates[2] == 5) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(-1)
-                                    .setColumn(-1)
-                                    .setValue(coordinates[2]);
-                            
-                        }
-                        else if(coordinates[2] == 6) {
-                            req.setOperationType(Request.OperationType.CLEAR)
-                                    .setRow(-1)
-                                    .setColumn(-1)
-                                    .setValue(coordinates[2]);
-                            
-                        }
-					}
-					catch(Exception ex) {
-						throw new RuntimeException(ex);
-					}
+					req = clearRequest(req);
                     
                     break;
                 // If you want to get a new board
@@ -287,6 +252,70 @@ class SockBaseClient {
         
     }
     
+    /**
+     * Method that will create the clear request
+     *
+     * @param req Request to the server
+     * @return The clear request to send to the server
+     */
+    static Request.Builder clearRequest(Request.Builder req) {
+        int row = 0;
+        int column = 0;
+        int value = 0;
+        
+        System.out.println("[DEBUG] Clear board");
+        try {
+            int[] coordinates = boardSelectionClear();
+            
+            if(coordinates[2] == 1) {
+                row = coordinates[0] -1;
+                column = coordinates[1] - 1;
+                value = coordinates[2];
+            }
+            else if(coordinates[2] == 2) {
+                row = coordinates[0] - 1;
+                column = coordinates[1];
+                value = coordinates[2];
+            }
+            else if(coordinates[2] == 3) {
+                row = coordinates[0];
+                column = coordinates[1] - 1;
+                value = coordinates[2];
+            }
+            else if(coordinates[2] == 4) {
+                row = coordinates[0];
+                column = coordinates[1];
+                value = coordinates[2];
+            }
+            else if(coordinates[2] == 5) {
+                row = coordinates[0];
+                column = coordinates[1];
+                value = coordinates[2];
+            }
+            else if(coordinates[2] == 6) {
+                row = coordinates[0];
+                column = coordinates[1] - 1;
+                value = coordinates[2];
+            }
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        
+        return req.setOperationType(Request.OperationType.CLEAR)
+                .setRow(row)
+                .setColumn(column)
+                .setValue(value);
+    }
+    
+    /**
+     * Method that processes the evaluation of move from the other server
+     *
+     * @param req Request from the server
+     * @param response Response to the server
+     * @return The request with the client's menu selection to the server
+     * @throws IOException If client didn't input the correct data type
+     */
     static Request.Builder playRequest(Request.Builder req, Response response) throws IOException {
         // Tell client the result of there request
         processEval(response);
@@ -353,7 +382,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-        System.out.print(" 1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board \n");
+        System.out.println(" 1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
 
         String selection = stdin.readLine();
 
@@ -372,7 +401,7 @@ class SockBaseClient {
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
                 System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-                System.out.print("1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board \n");
+                System.out.println("1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
             }
             selection = stdin.readLine();
         }
@@ -415,7 +444,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose coordinates of the value you want to clear");
-        System.out.print("Enter the row as an integer (1 - 9): ");
+        System.out.println("Enter the row as an integer (1 - 9)");
         String row = stdin.readLine();
 
         while (true) {
@@ -427,14 +456,14 @@ class SockBaseClient {
                 break;
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
-                System.out.print("Enter the row as an integer (1 - 9): ");
+                System.out.println("Enter the row as an integer (1 - 9)");
             }
             row = stdin.readLine();
         }
 
         coordinates[0] = Integer.parseInt(row);
 
-        System.out.print("Enter the column as an integer (1 - 9): ");
+        System.out.println("Enter the column as an integer (1 - 9)");
         String col = stdin.readLine();
 
         while (true) {
@@ -446,7 +475,7 @@ class SockBaseClient {
                 break;
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
-                System.out.print("Enter the column as an integer (1 - 9): ");
+                System.out.println("Enter the column as an integer (1 - 9)");
             }
             col = stdin.readLine();
         }
@@ -463,7 +492,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose the row you want to clear");
-        System.out.print("Enter the row as an integer (1 - 9): ");
+        System.out.println("Enter the row as an integer (1 - 9)");
         String row = stdin.readLine();
 
         while (true) {
@@ -475,7 +504,7 @@ class SockBaseClient {
                 break;
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
-                System.out.print("Enter the row as an integer (1 - 9): ");
+                System.out.println("Enter the row as an integer (1 - 9)");
             }
             row = stdin.readLine();
         }
@@ -493,7 +522,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose the column you want to clear");
-        System.out.print("Enter the column as an integer (1 - 9): ");
+        System.out.println("Enter the column as an integer (1 - 9)");
         String col = stdin.readLine();
 
         while (true) {
@@ -505,7 +534,7 @@ class SockBaseClient {
                 break;
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
-                System.out.print("Enter the column as an integer (1 - 9): ");
+                System.out.println("Enter the column as an integer (1 - 9)");
             }
             col = stdin.readLine();
         }
@@ -523,7 +552,7 @@ class SockBaseClient {
 
         System.out.println("Choose area of the grid you want to clear");
         System.out.println(" 1 2 3 \n 4 5 6 \n 7 8 9 \n");
-        System.out.print("Enter the grid as an integer (1 - 9): ");
+        System.out.println("Enter the grid as an integer (1 - 9)");
         String grid = stdin.readLine();
 
         while (true) {
@@ -535,7 +564,7 @@ class SockBaseClient {
                 break;
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
-                System.out.print("Enter the grid as an integer (1 - 9): ");
+                System.out.println("Enter the grid as an integer (1 - 9)");
             }
             grid = stdin.readLine();
         }
