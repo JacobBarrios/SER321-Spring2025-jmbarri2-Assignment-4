@@ -269,13 +269,13 @@ class SockBaseClient {
                 value = coordinates[2];
             }
             else if(coordinates[2] == 2) {
-                row = coordinates[0] - 1;
-                column = coordinates[1];
+                row = coordinates[0];
+                column = coordinates[1] - 1;
                 value = coordinates[2];
             }
             else if(coordinates[2] == 3) {
-                row = coordinates[0];
-                column = coordinates[1] - 1;
+                row = coordinates[0] - 1;
+                column = coordinates[1];
                 value = coordinates[2];
             }
             else if(coordinates[2] == 4) {
@@ -328,11 +328,11 @@ class SockBaseClient {
         else if(response.getType() == Response.EvalType.PRESET_VALUE) {
             System.out.println("Couldn't fill in spot");
         }
-        else if(response.getType() == Response.EvalType.DUP_ROW) {
-            System.out.println("Number exists in row");
-        }
         else if(response.getType() == Response.EvalType.DUP_COL) {
             System.out.println("Number exists in column");
+        }
+        else if(response.getType() == Response.EvalType.DUP_ROW) {
+            System.out.println("Number exists in row");
         }
         else if(response.getType() == Response.EvalType.DUP_GRID) {
             System.out.println("Number exists in grid");
@@ -378,7 +378,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-        System.out.println(" 1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
+        System.out.println(" 1 - Clear value \n 2 - Clear column \n 3 - Clear row \n 4 - Clear Grid \n 5 - Clear Board");
 
         String selection = stdin.readLine();
 
@@ -397,7 +397,7 @@ class SockBaseClient {
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
                 System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-                System.out.println("1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
+                System.out.println("1 - Clear value \n 2 - Clear column \n 3 - Clear row \n 4 - Clear Grid \n 5 - Clear Board");
             }
             selection = stdin.readLine();
         }
@@ -410,12 +410,12 @@ class SockBaseClient {
                 coordinates = boardSelectionClearValue();
                 break;
             case "2":
-                // clear row, so array will have {row, -1, 2}
-                coordinates = boardSelectionClearRow();
+                // clear row, so array will have {-1, col, 2}
+                coordinates = boardSelectionClearCol();
                 break;
             case "3":
-                // clear col, so array will have {-1, col, 3}
-                coordinates = boardSelectionClearCol();
+                // clear col, so array will have {row, -1, 3}
+                coordinates = boardSelectionClearRow();
                 break;
             case "4":
                 // clear grid, so array will have {gridNum, -1, 4}
@@ -507,7 +507,7 @@ class SockBaseClient {
 
         coordinates[0] = Integer.parseInt(row);
         coordinates[1] = -1;
-        coordinates[2] = 2;
+        coordinates[2] = 3;
 
         return coordinates;
     }
@@ -537,7 +537,7 @@ class SockBaseClient {
 
         coordinates[0] = -1;
         coordinates[1] = Integer.parseInt(col);
-        coordinates[2] = 3;
+        coordinates[2] = 2;
         return coordinates;
     }
 

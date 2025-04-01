@@ -256,10 +256,14 @@ class SockBaseServer extends Thread {
      *
      * @return Response for the client with the leaderboard
      */
-    private Response leaderRequest() {
+    private Response leaderRequest() throws IOException {
         System.out.println("[DEBUG] Got leaderboard request");
         
         Response.Builder newResponse = Response.newBuilder();
+        
+        // Get the json list from the json file
+        String jsonString = new String(Files.readAllBytes(Paths.get(leaderFilename)));
+        leaderboardList = new JSONArray(jsonString);
         
         for(int i = 0; i < leaderboardList.length(); i++) {
             JSONObject playerJSON = leaderboardList.getJSONObject(i);
@@ -309,9 +313,7 @@ class SockBaseServer extends Thread {
      * @return Response with the evaluation of the move from the client
      */
     private Response updateRequest(Request op) {
-        System.out.println("[DEBUG] Request has col: " + op.hasColumn());
-        System.out.println("[DEBUG] Request has row: " + op.hasRow());
-        System.out.println("[DEBUG] Request has value: " + op.hasValue());
+        System.out.println("[DEBUG] play request");
         
         int row = op.getRow();
         int column = op.getColumn();
@@ -319,7 +321,6 @@ class SockBaseServer extends Thread {
         int eval;
         Response.Builder response;
         
-        System.out.println("[DEBUG] play request");
         System.out.println("[DEBUG] Row: " + row);
         System.out.println("[DEBUG] Column: " + column);
         System.out.println("[DEBUG] Value: " + value);
@@ -357,31 +358,15 @@ class SockBaseServer extends Thread {
             game.setPoints(-game.getPoints());
         }
         else {
-            Response.EvalType evalType = Response.EvalType.UPDATE;
+            Response.EvalType evalType = Response.EvalType.values()[eval];
             currentState = 3;
             
             if(eval == 0) {
                 System.out.println("[DEBUG] Valid move");
             }
-            else if(eval == 1) {
+            else {
                 game.setPoints(-2);
-                System.out.println("[DEBUG] Can't fill with number");
-                evalType = Response.EvalType.PRESET_VALUE;
-            }
-            else if(eval == 2) {
-                game.setPoints(-2);
-                System.out.println("[DEBUG] Duplicate row");
-                evalType = Response.EvalType.DUP_ROW;
-            }
-            else if(eval == 3) {
-                game.setPoints(-2);
-                System.out.println("[DEBUG] Duplicate column");
-                evalType = Response.EvalType.DUP_COL;
-            }
-            else if(eval == 4) {
-                game.setPoints(-2);
-                System.out.println("[DEBUG] Duplicate grid");
-                evalType = Response.EvalType.DUP_GRID;
+                System.out.println("Not valid move");
             }
             
             response = Response.newBuilder()
@@ -409,37 +394,18 @@ class SockBaseServer extends Thread {
         int column = op.getColumn();
         int value = op.getValue();
         
-        Response.EvalType evalType = Response.EvalType.CLEAR_VALUE;
+        System.out.println("[DEBUG] Clear value: " + value);
         
         game.updateBoard(row, column, 0, value);
+        System.out.println("[DEBUG] Updated board");
         game.setPoints(-5);
+        System.out.println("[DEBUG] Updated game points");
         currentState = 3;
+        System.out.println("[DEBUG] Updated current state");
         
-        if(value == 1) {
-            evalType = Response.EvalType.CLEAR_VALUE;
-            
-        }
-        else if(value == 2) {
-            evalType = Response.EvalType.CLEAR_ROW;
-            
-        }
-        else if(value == 3) {
-            evalType = Response.EvalType.CLEAR_COL;
-            
-        }
-        else if(value == 4) {
-            evalType = Response.EvalType.CLEAR_GRID;
-            
-        }
-        else if(value == 5) {
-            evalType = Response.EvalType.CLEAR_BOARD;
-            
-        }
-        else if(value == 6) {
-            evalType = Response.EvalType.RESET_BOARD;
-            game.newBoard(grading);
-            
-        }
+        
+        Response.EvalType evalType = Response.EvalType.values()[value + 4];
+        System.out.println("[DEBUG] clear evalType: " + evalType);
         
         return response = Response.newBuilder()
                 .setResponseType(Response.ResponseType.PLAY)

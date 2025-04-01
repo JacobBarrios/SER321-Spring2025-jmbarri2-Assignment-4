@@ -237,13 +237,14 @@ public class Game {
             // type 1 is clearing a single cell back to 'X'
             playerBoard[row][column] = referenceBoard[row][column];
         } else if (type == 2) {
-            // clear row back to original
-            if (size >= 0) System.arraycopy(referenceBoard[row], 0, playerBoard[row], 0, size);
-        } else if (type == 3) {
             // clear col back to original
             for (int i = 0; i < size; i++) {
                 playerBoard[i][column] = referenceBoard[i][column];
             }
+            
+        } else if (type == 3) {
+            // clear row back to original
+            if (size >= 0) System.arraycopy(referenceBoard[row], 0, playerBoard[row], 0, size);
         } else if (type == 4) {
             // clear grid back to original
             int startRow = 0;

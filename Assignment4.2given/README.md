@@ -32,7 +32,12 @@ Now you can run the client and server, please follow these instructions to start
 
 
 # Readme checklist:
-
+1. Description: This project is an implementation of sudoku that can
+run multiple clients on one server and has a persistent leader board
+so scores can be saved even when the server crashes.
+2. Run the code: you can run the code by using gradle -Phost -P8080
+3. Video: [See Screencast section](#Screencast)
+4. I believed I fulfilled all the requirements as shown by my [checklist](#requirements-if-checked-off-then-completed-and-includes-debugging) below
 
 # Requirements (If checked off then completed and includes debugging)
 - [x] Run through gradle
