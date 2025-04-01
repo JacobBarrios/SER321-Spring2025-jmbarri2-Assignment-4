@@ -130,36 +130,36 @@ public class ServerTest {
     }
 
     // Test will keep failing because the name is on the leaderboard now
-//    @Test
-//    @DisplayName("Testing game flow to Leaderboard")
-//    // this test only passes when that person has not logged in yet!! Could be done better but here we are
-//    public void leaderRequest() throws IOException {
-//        String name = "Mehlhase3";
-//        // Build the first request object just including the name
-//        RequestProtos.Request op = RequestProtos.Request.newBuilder()
-//                .setOperationType(RequestProtos.Request.OperationType.NAME)
-//                .setName(name)
-//                .build();
-//        op.writeDelimitedTo(out);
-//
-//        ResponseProtos.Response response = ResponseProtos.Response.parseDelimitedFrom(in);
-//
-//        assertEquals(ResponseProtos.Response.ResponseType.GREETING, response.getResponseType());
-//        assertEquals("Hello " + name + " and welcome to a simple game of Sudoku.", response.getMessage());
-//        assertEquals("\nWhat would you like to do? \n 1 - to see the leader board \n 2 - to enter a game \n 3 - quit the game", response.getMenuoptions());
-//
-//        RequestProtos.Request req = RequestProtos.Request.newBuilder()
-//                .setOperationType(RequestProtos.Request.OperationType.LEADERBOARD).build();
-//        req.writeDelimitedTo(out);
-//
-//        ResponseProtos.Response leader = ResponseProtos.Response.parseDelimitedFrom(in);
-//
-//        assertEquals(ResponseProtos.Response.ResponseType.LEADERBOARD, leader.getResponseType());
-//        assertEquals("\nWhat would you like to do? \n 1 - to see the leader board \n 2 - to enter a game \n 3 - quit the game", leader.getMenuoptions());
-//
-//        ResponseProtos.Entry entry = ResponseProtos.Entry.newBuilder().setName(name).setLogins(1).setPoints(0).build();
-//        assertTrue(leader.getLeaderList().contains(entry), "List does not contain name");
-//    }
+    @Test
+    @DisplayName("Testing game flow to Leaderboard")
+    // this test only passes when that person has not logged in yet!! Could be done better but here we are
+    public void leaderRequest() throws IOException {
+        String name = "Mehlhase3";
+        // Build the first request object just including the name
+        RequestProtos.Request op = RequestProtos.Request.newBuilder()
+                .setOperationType(RequestProtos.Request.OperationType.NAME)
+                .setName(name)
+                .build();
+        op.writeDelimitedTo(out);
+
+        ResponseProtos.Response response = ResponseProtos.Response.parseDelimitedFrom(in);
+
+        assertEquals(ResponseProtos.Response.ResponseType.GREETING, response.getResponseType());
+        assertEquals("Hello " + name + " and welcome to a simple game of Sudoku.", response.getMessage());
+        assertEquals("\nWhat would you like to do? \n 1 - to see the leader board \n 2 - to enter a game \n 3 - quit the game", response.getMenuoptions());
+
+        RequestProtos.Request req = RequestProtos.Request.newBuilder()
+                .setOperationType(RequestProtos.Request.OperationType.LEADERBOARD).build();
+        req.writeDelimitedTo(out);
+
+        ResponseProtos.Response leader = ResponseProtos.Response.parseDelimitedFrom(in);
+
+        assertEquals(ResponseProtos.Response.ResponseType.LEADERBOARD, leader.getResponseType());
+        assertEquals("\nWhat would you like to do? \n 1 - to see the leader board \n 2 - to enter a game \n 3 - quit the game", leader.getMenuoptions());
+
+        ResponseProtos.Entry entry = ResponseProtos.Entry.newBuilder().setName(name).setLogins(1).setPoints(0).build();
+        assertTrue(leader.getLeaderList().contains(entry), "List does not contain name");
+    }
 
     @Test
     @DisplayName("Testing the START request with wrong difficulty")

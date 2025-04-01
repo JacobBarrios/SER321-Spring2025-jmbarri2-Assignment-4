@@ -404,9 +404,24 @@ class SockBaseServer extends Thread {
         System.out.println("[DEBUG] Updated current state");
         
         
-        Response.EvalType evalType = Response.EvalType.values()[value + 4];
+        Response.EvalType evalType = Response.EvalType.CLEAR_VALUE;
         System.out.println("[DEBUG] clear evalType: " + evalType);
         
+        if(value == 2) {
+            evalType = Response.EvalType.CLEAR_ROW;
+        }
+        else if(value == 3) {
+            evalType = Response.EvalType.CLEAR_COL;
+        }
+        else if(value == 4) {
+            evalType = Response.EvalType.CLEAR_GRID;
+        }
+        else if(value == 5) {
+            evalType = Response.EvalType.CLEAR_BOARD;
+        }
+        else if(value == 6) {
+            evalType = Response.EvalType.RESET_BOARD;
+        }
         return response = Response.newBuilder()
                 .setResponseType(Response.ResponseType.PLAY)
                 .setBoard(game.getDisplayBoard())

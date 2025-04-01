@@ -51,21 +51,25 @@ class SockBaseClient {
                     case GREETING:
                         // Server saying hello to client
                         System.out.println(response.getMessage());
+                        // Main menu request
                         req = chooseMenuRequest(req, response);
                         
                         break;
                     case START:
+                        // Server sent start game
                         // Goes to in game menu insert, clear, new board
                         req = chooseInGameMenuRequest(req, response);
                         
                         break;
                     case PLAY:
-                        // Server said keep playing
+                        // Server sent keep playing
+                        // Goes to in game menu insert, clear, new board
                         req = playRequest(req, response);
                         
                         break;
                     case WON:
                         // Server said client won
+                        // Goes back to main menu
                         System.out.println(response.getMessage());
                         req = chooseMenuRequest(req, response);
                         
@@ -82,11 +86,12 @@ class SockBaseClient {
                             System.out.println("----------------------");
                         }
                         
+                        // Goes back to main menu
                         req = chooseMenuRequest(req, response);
                         
                         break;
                     case BYE:
-                        // Server said to quit
+                        // Server sent quit
                         System.out.println("Quiting");
                         
                         return;
@@ -226,19 +231,19 @@ class SockBaseClient {
         }
         catch(NumberFormatException e) {
 			switch(menu_select) {
-                // If you want to clear
+                // If client wants to clear
                 case "c":
 					req = clearRequest(req);
                     
                     break;
-                // If you want to get a new board
+                // If client wants to get a new board
                 case "r":
 					System.out.println("[DEBUG] New board");
 					req.setOperationType(Request.OperationType.CLEAR)
 							.setRow(-1)
 							.setColumn(-1)
 							.setValue(6);
-				// If you want to exit
+				// If client wants to exit
                 case "exit":
                     req.setOperationType(Request.OperationType.QUIT);
 			}
@@ -269,13 +274,13 @@ class SockBaseClient {
                 value = coordinates[2];
             }
             else if(coordinates[2] == 2) {
-                row = coordinates[0];
-                column = coordinates[1] - 1;
+                row = coordinates[0] - 1;
+                column = coordinates[1];
                 value = coordinates[2];
             }
             else if(coordinates[2] == 3) {
-                row = coordinates[0] - 1;
-                column = coordinates[1];
+                row = coordinates[0];
+                column = coordinates[1] - 1;
                 value = coordinates[2];
             }
             else if(coordinates[2] == 4) {
@@ -321,6 +326,11 @@ class SockBaseClient {
         
     }
     
+    /**
+     * Method that prints the results sent from the server
+     *
+     * @param response Response from the server
+     */
     static void processEval(Response response) {
         if(response.getType() == Response.EvalType.UPDATE) {
             System.out.println("Number was filled successfully");
@@ -378,7 +388,7 @@ class SockBaseClient {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-        System.out.println(" 1 - Clear value \n 2 - Clear column \n 3 - Clear row \n 4 - Clear Grid \n 5 - Clear Board");
+        System.out.println(" 1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
 
         String selection = stdin.readLine();
 
@@ -397,7 +407,7 @@ class SockBaseClient {
             } catch (NumberFormatException nfe) {
                 System.out.println("That's not an integer!");
                 System.out.println("Choose what kind of clear by entering an integer (1 - 5)");
-                System.out.println("1 - Clear value \n 2 - Clear column \n 3 - Clear row \n 4 - Clear Grid \n 5 - Clear Board");
+                System.out.println("1 - Clear value \n 2 - Clear row \n 3 - Clear column \n 4 - Clear Grid \n 5 - Clear Board");
             }
             selection = stdin.readLine();
         }
@@ -410,12 +420,12 @@ class SockBaseClient {
                 coordinates = boardSelectionClearValue();
                 break;
             case "2":
-                // clear row, so array will have {-1, col, 2}
-                coordinates = boardSelectionClearCol();
+                // clear row, so array will have {row, -1, 2}
+                coordinates = boardSelectionClearRow();
                 break;
             case "3":
-                // clear col, so array will have {row, -1, 3}
-                coordinates = boardSelectionClearRow();
+                // clear col, so array will have {-1, col, 3}
+                coordinates = boardSelectionClearCol();
                 break;
             case "4":
                 // clear grid, so array will have {gridNum, -1, 4}
