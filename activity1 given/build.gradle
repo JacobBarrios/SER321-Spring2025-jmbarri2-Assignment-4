@@ -70,7 +70,7 @@ task runTask3(type: JavaExec) {
 
   // run with arguments e.g.: gradle runTask3 -Pport=8080 -Pusers -q --console=plain
   def port = project.hasProperty('port') ? project.getProperty('port') : '8080'
-  def users = project.hasProperty('users') ? project.getProperty('users') : 5
+  def users = project.hasProperty('users') ? project.getProperty('users') : 2
 
   args(port, users)
 }

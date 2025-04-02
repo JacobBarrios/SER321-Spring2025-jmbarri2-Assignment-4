@@ -7,6 +7,9 @@ The Operations to Implement:
 - Display: Displays the list of strings.
 - Count: Returns the number of strings in the list.
 
+## Screencast
+- https://youtu.be/l0mjjOSE1sE
+
 ## Protocol
 
 ### Requests

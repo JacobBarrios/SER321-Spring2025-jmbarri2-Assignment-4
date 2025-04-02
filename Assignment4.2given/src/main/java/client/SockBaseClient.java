@@ -243,9 +243,13 @@ class SockBaseClient {
 							.setRow(-1)
 							.setColumn(-1)
 							.setValue(6);
+                    
+                    break;
 				// If client wants to exit
                 case "exit":
                     req.setOperationType(Request.OperationType.QUIT);
+                    
+                    break;
 			}
         }
         
@@ -295,7 +299,7 @@ class SockBaseClient {
             }
             else if(coordinates[2] == 6) {
                 row = coordinates[0];
-                column = coordinates[1] - 1;
+                column = coordinates[1];
                 value = coordinates[2];
             }
         }
@@ -517,7 +521,7 @@ class SockBaseClient {
 
         coordinates[0] = Integer.parseInt(row);
         coordinates[1] = -1;
-        coordinates[2] = 3;
+        coordinates[2] = 2;
 
         return coordinates;
     }
@@ -547,7 +551,7 @@ class SockBaseClient {
 
         coordinates[0] = -1;
         coordinates[1] = Integer.parseInt(col);
-        coordinates[2] = 2;
+        coordinates[2] = 3;
         return coordinates;
     }
 

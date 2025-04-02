@@ -99,8 +99,12 @@ public class Game {
                         {'9', '4', '8', '2', '5', '6', '3', '1', '7'},
                         {'2', '5', '6', '3', '1', '7', '9', '4', '8'}
                 };
-
-
+                
+                for(int i = 0; i < size; i++) {
+                    System.arraycopy(solvedBoard[i], 0, this.solvedBoard[i], 0, size);
+                    
+                }
+                
             }
 
         }
